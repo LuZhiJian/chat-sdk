@@ -15,8 +15,14 @@ async function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    frame: true,
+    maximizable: true,
+    minimizable: true,
+    hasShadow: true,
+    titleBarStyle: 'hidden',
     webPreferences: {
-      
+      webSecurity: false,
+      devTools: true,
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION

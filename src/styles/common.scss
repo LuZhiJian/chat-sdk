@@ -1,0 +1,24 @@
+@import "./_reset";
+@import "./_mixin";
+@import "./_flex";
+
+$color-blue: #0084FE;
+$color-blue-hover: #59a5ff;
+$color-red: #F50D2E;
+$color-gray: #9B9B9B;
+$color-warning: #f90;
+$color-success: #19be6b;
+$color-error: #ed4014;
+
+.drag {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+*{
+  font-family:Microsoft YaHei;
+}
+
