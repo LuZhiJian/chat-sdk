@@ -35,6 +35,16 @@ module.exports = {
       .set('assets', resolve('src/assets'))
       .set('components', resolve('src/components'))
 
+    //svgicon
+    const svgRule = config.module.rule('svg')
+    svgRule.uses.clear()
+    svgRule
+      .use('svg-sprite-loader')
+      .loader('svg-sprite-loader')
+      .options({
+        symbolId: '[name]'
+      })
+
     config.module
       .rule('js')
       .test(/\.(js|es6)$/)
@@ -51,6 +61,7 @@ module.exports = {
   },
   pluginOptions: {
     electronBuilder: {
+      nodeIntegration: true,
       outputDir: 'codeDist',
       customFileProtocol: "/",
       builderOptions: {

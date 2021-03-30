@@ -1,30 +1,58 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+  <div class="header-btn-line" >
+    <WinBtnLine />
   </div>
   <router-view/>
 </template>
 
 <style lang="scss">
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
+  width: 100%;
+  height: 100%;
+  @include linear-gradient(to bottom, #13303e, #267c7d);
 }
 </style>
+<script>
+import { WinBtnLine } from 'components'
+import packageJson from '../package.json'
+import os from 'os'
+
+export default {
+  data() {
+    return {
+      sysForWin: os.type() === 'Windows_NT' ? true : false,//系统判断
+    }
+  },
+  components: {
+    WinBtnLine
+  },
+  async created() {
+    if (packageJson.istoout) {
+      // 对外版本禁止强制刷新
+      window.onkeydown = (e) => {
+        const ev = window.event || e
+        const code = ev.keyCode || ev.which
+        if (code === 82 && (ev.metaKey || ev.ctrlKey)) {
+          return false
+        }
+      }
+    }
+  },
+  mounted() {
+  },
+  methods: {
+    clickEvent(e) {
+      console.log(e)
+    }
+  },
+  watch: {
+    // isLogin: {
+    //   handler: 'onLoginChange',
+    //   immediate: true,
+    //   deep: true
+    // },
+  },
+  computed: {
+  }
+}
+</script>

@@ -2,5 +2,15 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import svgIcon from "./components/icons/index.vue"
 
-createApp(App).use(store).use(router).mount('#app')
+const app = createApp(App)
+app.component('svgIcon', svgIcon)
+const requireAll = requireContext => requireContext.keys().map(requireContext)
+// 第一个参数是:'./svg' => 需要检索的目录
+// 第二个参数是：false => 是否检索子目录
+// 第三个参数是: /.svg$/ => 匹配文件的正则
+const req = require.context('./components/icons/svg', false, /\.svg$/)
+requireAll(req)
+
+app.use(store).use(router).mount('#app')
