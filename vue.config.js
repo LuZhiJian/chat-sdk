@@ -5,23 +5,9 @@ function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
-// function getAssetPath (assetsDir, filePath) {
-//   return assetsDir
-//     ? path.posix.join(assetsDir, filePath)
-//     : filePath
-// }
-
-// console.log(process.argv)
 let myAppName = 'xdsdk'
 
 module.exports = {
-  /* configureWebpack: config => {
-      if (process.env.NODE_ENV === 'production') {
-          // 为生产环境修改配置...
-      } else {
-          // 为开发环境修改配置...
-      }
-  }, */
   publicPath: './',
   lintOnSave: false,
   filenameHashing: true,

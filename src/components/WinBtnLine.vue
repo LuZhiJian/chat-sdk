@@ -56,17 +56,14 @@
 
   svg {
     vertical-align: -1px;
-    fill: #333;
+    fill: #fff;
   }
 
   &:hover {
-    background-color: #d8d8d8;
+    background-color: rgba(0, 0, 0, 0.2);
   }
   &.btn-close:hover {
     background-color: rgb(231, 66, 66);
-    svg {
-      fill: #fff;
-    }
   }
 }
 </style>
