@@ -58,8 +58,8 @@ module.exports = {
           "output": "./appDist" //输出文件路径
         },
         "extraResources": [{
-          "from": "public/icons/",
-          "to": "icons/"
+          "from": "./static",
+          "to": "static"
         }], // 拷贝静态文件到指定位置
         "win": { //win相关配置
           "icon": "./src/assets/logo.ico",
@@ -85,9 +85,9 @@ module.exports = {
           'oneClick': false,
           'perMachine': false,
           'allowToChangeInstallationDirectory': true,// 允许修改安装目录，建议为 true，是否允许用户改变安装目录，默认是不允许
-          'installerIcon': './src/assets/logo.ico',// 安装图标
-          'uninstallerIcon': './src/assets/unshift.ico',// 卸载图标
-          'installerHeaderIcon': './src/assets/logo.ico', // 安装时头部图标
+          'installerIcon': './static/logo.ico',// 安装图标
+          'uninstallerIcon': './static/unshift.ico',// 卸载图标
+          'installerHeaderIcon': './static/logo.ico', // 安装时头部图标
           'createDesktopShortcut': true, // 创建桌面图标
           'createStartMenuShortcut': true, // 创建开始菜单图标
           'deleteAppDataOnUninstall': true,
@@ -97,11 +97,11 @@ module.exports = {
         },
         'mac': {
           'target': 'dmg',
-          'icon': './src/assets/logo-@2x.png'
+          'icon': './static/logo.png'
         },
         'dmg': {
           'title': 'sdk',
-          'icon': './src/assets/logo-@2x.png',
+          'icon': './static/logo.png',
           'contents': [
             {
               'x': 110,

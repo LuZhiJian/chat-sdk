@@ -1,5 +1,11 @@
 @charset 'utf-8';
 
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 // 清楚浮动
 @mixin clearfix {
   zoom: 1;
@@ -20,6 +26,14 @@
   top: 0;
   bottom: 0;
   margin: auto;
+}
+
+@mixin clamp($n) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: $n;
+  -webkit-box-orient: vertical;
 }
 
 // 圆角
@@ -110,6 +124,18 @@
   background: url($url) no-repeat;
   background-size: cover;
   background-position: center center;
+}
+
+@mixin av-style($size, $url) {
+  width: $size;
+  height: $size;
+  border-radius: 10px;
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  @if $url {
+    background-image: url($url);
+  }
 }
 
 //渐变

@@ -1,30 +1,74 @@
 <template>
-  <div class="header-btn-line" >
-    <WinBtnLine />
+  <div :class="'view-wrapper ' + (loginSessionId && +this.myWinId === 1 ? 'is-login' : '')">
+    <div class="header-btn-line" v-if="sysForWin">
+      <WinBtnLine />
+    </div>
+    <div class="page-slide drag" v-if="loginSessionId && +this.myWinId === 1">
+      <SlideBar :data="myInfo" />
+    </div>
+    <router-view/>
+    <Notify />
   </div>
-  <router-view/>
 </template>
 
 <style lang="scss">
-#app {
+#app,
+.view-wrapper {
   width: 100%;
   height: 100%;
-  @include linear-gradient(to bottom, #13303e, #267c7d);
+}
+
+.view-wrapper {
+  position: relative;
+
+  .header-btn-line {
+    display: none;
+  }
+
+  &.is-login {
+    padding-left: 80px;
+
+    .header-btn-line {
+      display: block;
+    }
+  }
+
+  .page-slide {
+    width: 80px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: $color-primary;
+  }
 }
 </style>
 <script>
-import { WinBtnLine } from 'components'
+import { WinBtnLine, SlideBar, Notify } from 'components'
 import packageJson from '../package.json'
 import os from 'os'
+import websocket from 'utils/websocket'
+import { remote } from 'electron'
+import Win from 'utils/winOptions'
+
+const creatWinFun = () => {
+  Object.keys(Win).forEach(fun => {
+    Win[fun]({})
+  })
+}
 
 export default {
   data() {
     return {
       sysForWin: os.type() === 'Windows_NT' ? true : false,//系统判断
+      myWinId: 0,
+      myInfo: {}
     }
   },
   components: {
-    WinBtnLine
+    WinBtnLine,
+    SlideBar,
+    Notify
   },
   async created() {
     if (packageJson.istoout) {
@@ -39,20 +83,37 @@ export default {
     }
   },
   mounted() {
+    creatWinFun()
   },
   methods: {
     clickEvent(e) {
       console.log(e)
+    },
+    onLoginChange(id) {
+      console.log(id)
+      if (!id) {
+        this.$router.push({ path: '/login' })
+        return false
+      }
+      this.myWinId = remote.getCurrentWindow().id
+      if (this.myWinId === 1) {
+        websocket.init()
+      }
     }
   },
   watch: {
-    // isLogin: {
-    //   handler: 'onLoginChange',
-    //   immediate: true,
-    //   deep: true
-    // },
+    loginSessionId: {
+      handler: 'onLoginChange',
+      immediate: true,
+      deep: true
+    }
   },
   computed: {
+    loginSessionId() {
+      const loginData = this.$store.state.loginData
+      this.myInfo = (loginData && loginData.userInfo) || {}
+      return loginData && loginData.sessionId
+    }
   }
 }
 </script>

@@ -1,0 +1,80 @@
+.slidebar-wrapper {
+  padding-top: 60px;
+
+  .login-avatar {
+    width: 54px;
+    height: 54px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 2px solid rgba(237, 64, 20, 0.5);
+    padding: 2px;
+    position: relative;
+    cursor: pointer;
+    background-position: center;
+    background-repeat: no-repeat;
+    // background-image: url('./assets/avatar.png');
+    background-size: cover;
+
+    .avatar-box {
+      width: 46px;
+      height: 46px;
+      border: 2px solid rgba(237, 64, 20, 0.8);
+      background-position: center;
+      border-radius: 50%;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    &.online {
+      border-color: rgba(25, 190, 107, 0.2);
+
+      .avatar-box {
+        border-color: rgba(25, 190, 107, 0.3);
+      }
+    }
+  }
+
+  .page-list {
+    margin-top: 40px;
+
+    .page-item {
+      width: 100%;
+      text-align: center;
+
+      &.active {
+        background-color: #031956;
+
+        a svg {
+          fill: #fff;
+        }
+      }
+
+      a {
+        height: 68px;
+        line-height: 68px;
+        display: block;
+        position: relative;
+
+        svg {
+          fill: #999;
+          vertical-align: middle;
+        }
+
+        .tag {
+          min-width: 8px;
+          min-height: 8px;
+          padding: 0px 3px;
+          border-radius: 4px;
+          position: absolute;
+          top: 20px;
+          left: 46px;
+          line-height: normal;
+          font-size: 10px;
+          background-color: $color-error;
+          color: #fff;
+        }
+      }
+    }
+  }
+}

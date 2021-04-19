@@ -12,10 +12,7 @@ export default {
       type: String,
       required: true,
     },
-    width: {
-      type: String,
-    },
-    height: {
+    size: {
       type: String,
     },
     color: {
@@ -31,8 +28,8 @@ export default {
     },
     style() {
       return {
-        width: this.width,
-        height: this.height,
+        width: this.size,
+        height: this.size,
         fill: this.color,
       };
     },

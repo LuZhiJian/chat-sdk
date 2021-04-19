@@ -1,0 +1,169 @@
+.list-wrapper {
+  height: 100%;
+  @include clearfix;
+
+  .left-inner {
+    width: 240px;
+    height: 100%;
+    float: left;
+    border-right: 1px solid #e6e6e6;
+  }
+
+  .right-inner {
+    width: calc(100% - 240px);
+    height: 100%;
+    float: left;
+    background-color: #fff;
+  }
+
+  .user-list {
+    width: 100%;
+
+    dl {
+      dt {
+        width: 100%;
+        height: 16px;
+        font-size: 10px;
+        line-height: 16px;
+        background-color: #f2f2f2;
+        padding: 0 12px;
+        color: #999;
+      }
+    }
+
+    .user-tree {
+
+      li {
+        @include clearfix;
+        padding: 10px 12px 5px;
+
+        &.active {
+          background-color: #eee;
+        }
+      }
+
+      .av-box {
+        width: 50px;
+        float: left;
+      }
+
+      .nick-name {
+        width: calc(100% - 50px);
+        float: left;
+        line-height: 40px;
+        @extend .ellipsis;
+      }
+    }
+  }
+
+  .drag-wrapper {
+    width: 100%;
+    height: 60px;
+  }
+
+  .show-user-inner {
+    width: 350px;
+    margin: 0 auto;
+
+    .top-inners {
+      padding: 10px 0 20px;
+      @include clearfix;
+      border-bottom: 1px solid #e6e6e6;
+
+      .big-avatar {
+        width: 88px;
+        float: right;
+        @include clearfix;
+
+        .avatar-path {
+          float: right;
+          @include av-style(72px, '../../assets/avatar.png');
+        }
+      }
+
+      .info-box {
+        width: calc(100% - 88px);
+        float: left;
+        padding-top: 5px;
+
+        .nick-name-box {
+          width: 100%;
+          font-size: 24px;
+          line-height: 1.4;
+          position: relative;
+          padding-right: 30px;
+
+          .nick-name {
+            max-width: calc(100% - 30px);
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 8px;
+            @extend .ellipsis;
+          }
+
+          svg {
+            vertical-align: -1px;
+          }
+        }
+
+        .info-signature {
+          font-size: 14px;
+          color: #999;
+          margin-top: 8px;
+          @include clamp(2);
+        }
+      }
+    }
+
+    .info-detail-inners {
+      padding: 20px 0;
+
+      .detail-line {
+        width: 100%;
+        white-space: nowrap;
+        line-height: 36px;
+        font-size: 0;
+
+        span {
+          width: 48px;
+          display: inline-block;
+          vertical-align: top;
+          font-size: 13px;
+          color: #999;
+        }
+
+        .keys {
+          width: calc(100% - 48px);
+          display: inline-block;
+          vertical-align: top;
+          padding-left: 35px;
+          font-size: 14px;
+          color: #000;
+        }
+      }
+    }
+
+    .contorl-box {
+      width: 100%;
+
+      .ct-btn {
+        width: 136px;
+        height: 36px;
+        line-height: 36px;
+        text-align: center;
+        background-color: $color-primary;
+        color: #fff;
+        font-size: 12px;
+        border-radius: 6px;
+        cursor: default;
+        margin: 80px auto 0;
+        @include transition(.5s);
+
+        &:hover {
+          background-color: $color-primary-hover;
+          @include transition(.5s);
+        }
+      }
+    }
+  }
+}

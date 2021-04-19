@@ -1,3 +1,126 @@
 .home-wrapper {
+  height: 100%;
+  @include clearfix;
 
+  .left-inner {
+    width: 240px;
+    height: 100%;
+    float: left;
+    border-right: 1px solid #e6e6e6;
+  }
+
+  .right-inner {
+    width: calc(100% - 240px);
+    height: 100%;
+    float: left;
+    background-color: #f8f8f8;
+  }
+
+
+
+  .chat-head {
+    height: 60px;
+    border-bottom: 1px solid #e6e6e6;
+    position: relative;
+    padding: 0 60px 0 20px;
+
+    .chat-name {
+      vertical-align: top;
+      display: inline-block;
+      font-size: 16px;
+      line-height: 59px;
+      font-weight: 600;
+      cursor: default;
+    }
+
+    .more-info-btn {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      position: absolute;
+      top: 50%;
+      cursor: pointer;
+      margin-top: -15px;
+      right: 20px;
+      text-align: center;
+
+      svg {
+        vertical-align: middle;
+      }
+    }
+  }
+
+  .message-main-inner {
+    height: calc(100% - 60px - 160px);
+  }
+
+  .editor-wrapper {
+    width: 100%;
+
+    .editor-inner {
+      height: 160px;
+      border-top: 1px solid #e6e6e6;
+    }
+  }
+}
+
+.chatting-user-list {
+  .user-item {
+    width: 100%;
+    height: 68px;
+    padding: 10px 12px;
+    @include clearfix;
+
+    &.active {
+      background-color: #ddd;
+    }
+  }
+
+  .av-box {
+    width: 50px;
+    float: left;
+  }
+
+  .txt-box {
+    width: calc(100% - 50px);
+    float: left;
+
+    .top-line {
+      width: 100%;
+      @extend .ellipsis;
+      position: relative;
+      padding-right: 44px;
+
+      .nick-name {
+        font-size: 13px;
+        line-height: 20px;
+        vertical-align: top;
+      }
+
+      .chat-mini-time {
+        position: absolute;
+        top: 0;
+        right: 0;
+        vertical-align: top;
+      }
+    }
+
+    .bt-line {
+      width: 100%;
+      @extend .ellipsis;
+      position: relative;
+      padding-right: 30px;
+
+      .msg-txt {
+        font-size: 12px;
+        color: #666;
+      }
+
+      .icon-disturb {
+        position: absolute;
+        top: 5px;
+        right: 0;
+      }
+    }
+  }
 }

@@ -2,10 +2,8 @@
 @import "./_mixin";
 @import "./_flex";
 
-$color-blue: #0084FE;
-$color-blue-hover: #59a5ff;
-$color-red: #F50D2E;
-$color-gray: #9B9B9B;
+$color-primary: #253b78;
+$color-primary-hover: #40548c;
 $color-warning: #f90;
 $color-success: #19be6b;
 $color-error: #ed4014;
@@ -20,5 +18,59 @@ $color-error: #ed4014;
 
 *{
   font-family:Microsoft YaHei;
+}
+
+.search-box {
+  width: 100%;
+  height: 60px;
+  padding: 18px 20px 0;
+  border-bottom: 1px solid #e6e6e6;
+
+  .input-view {
+    width: 100%;
+    position: relative;
+
+    .icon-search {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      fill: #e6e6e6;
+    }
+
+    input {
+      width: 100%;
+      height: 24px;
+      display: block;
+      line-height: 24px;
+      border: 1px solid #e6e6e6;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #666;
+      background-color: #f4f4f4;
+      padding: 0 24px 0 22px;
+      outline: none;
+
+      &:focus {
+        background-color: #fff;
+      }
+    }
+
+    .clear-btn {
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      cursor: pointer;
+      text-align: center;
+
+      svg {
+        vertical-align: -2px;
+        fill: #ccc;
+      }
+    }
+
+  }
 }
 

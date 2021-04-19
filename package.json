@@ -1,5 +1,5 @@
 {
-  "name": "sdk-app",
+  "name": "peanut",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -13,8 +13,12 @@
   },
   "main": "background.js",
   "dependencies": {
+    "axios": "^0.21.1",
     "babel-loader": "^8.2.2",
     "core-js": "^3.6.5",
+    "crypto-js": "^4.0.0",
+    "dayjs": "^1.10.4",
+    "electron-windows-badge": "^1.1.0",
     "fs": "^0.0.1-security",
     "node-sass": "npm:dart-sass",
     "os": "^0.1.1",

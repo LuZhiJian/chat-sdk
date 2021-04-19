@@ -13,4 +13,19 @@ const requireAll = requireContext => requireContext.keys().map(requireContext)
 const req = require.context('./components/icons/svg', false, /\.svg$/)
 requireAll(req)
 
+app.config.globalProperties.$notify = {
+  open: (type, msg, time) => {
+    const obj = {
+      type: type,
+      msg: msg,
+      time: time
+    }
+    return store.dispatch('setNotify', obj)
+  },
+  close: () => {
+    const obj = {}
+    return store.dispatch('setNotify', obj)
+  }
+}
+
 app.use(store).use(router).mount('#app')
