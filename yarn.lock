@@ -3636,6 +3636,11 @@ detect-node@^2.0.4:
   resolved "https://registry.npm.taobao.org/detect-node/download/detect-node-2.0.5.tgz?cache=0&sync_timestamp=1615921059414&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fdetect-node%2Fdownload%2Fdetect-node-2.0.5.tgz#9d270aa7eaa5af0b72c4c9d9b814e7f4ce738b79"
   integrity sha1-nScKp+qlrwtyxMnZuBTn9M5zi3k=
 
+dexie@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.npm.taobao.org/dexie/download/dexie-3.0.3.tgz#ede63849dfe5f07e13e99bb72a040e8ac1d29dab"
+  integrity sha1-7eY4Sd/l8H4T6Zu3KgQOisHSnas=
+
 diffie-hellman@^5.0.0:
   version "5.0.3"
   resolved "https://registry.npm.taobao.org/diffie-hellman/download/diffie-hellman-5.0.3.tgz#40e8ee98f55a2149607146921c63e1ae5f3d2875"

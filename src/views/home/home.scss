@@ -52,14 +52,26 @@
 
   .message-main-inner {
     height: calc(100% - 60px - 160px);
+    padding: 3px;
+    overflow-y: hidden;
+
+
+    .message-main-scroll {
+      height: 100%;
+      padding-bottom: 20px;
+      overflow-y: auto;
+    }
+
+    @include scrollbar(block, 6px, 4px, #f8f8f8, rgba(37, 59, 120, .2));
   }
 
   .editor-wrapper {
     width: 100%;
 
     .editor-inner {
-      height: 160px;
+      height: 100%;
       border-top: 1px solid #e6e6e6;
+      background-color: #fff;
     }
   }
 }
@@ -120,6 +132,107 @@
         position: absolute;
         top: 5px;
         right: 0;
+      }
+    }
+  }
+}
+
+.message-main-bying {
+  padding: 0 12px;
+}
+
+.message-item {
+  .time-line {
+    font-size: 12px;
+    text-align: center;
+    color: #b4b4b4;
+    padding: 15px 0;
+  }
+
+  .msg-line {
+    @include clearfix;
+
+    .u-avatar {
+      width: 30px!important;
+      height: 30px!important;
+      float: left;
+
+      .img-path {
+        width: 30px!important;
+        height: 30px!important;
+      }
+    }
+
+    .msg-box {
+      float: left;
+      max-width: 72%;
+      margin: 0 15px;
+
+      .msg {
+        font-size: 13px;
+        padding: 8px 12px;
+        line-height: 1.5;
+        background-color: #e3d7ee;
+        border-radius: 6px;
+        color: #333;
+        word-break: break-all;
+        position: relative;
+
+        &:before {
+          content: '';
+          width: 30px;
+          height: 30px;
+          background-image: url('../../assets/msg-1.png');
+          background-repeat: no-repeat;
+          background-size: contain;
+          background-position: center;
+          position: absolute;
+          bottom: 0;
+          right: -15px;
+        }
+
+        &:after {
+          width: 0;
+          height: 0;
+          content: '';
+          border-top: 5px solid transparent;
+          border-bottom: 5px solid transparent;
+          border-right: 5px solid #e3d7ee;
+          position: absolute;
+          top: 11px;
+          left: -5px;
+        }
+      }
+    }
+  }
+
+  &.me {
+    .msg-line {
+      .u-avatar {
+        float: right;
+      }
+
+      .msg-box {
+        float: right;
+
+        .msg {
+          color: #735c57;
+          background-color: rgba(37, 59, 120, .2);
+
+          &:before {
+            background-image: url('../../assets/msg-2.png');
+            bottom: 0;
+            right: auto;
+            left: -15px;
+          }
+
+          &:after {
+            border-right: 0 solid rgba(37, 59, 120, .2);
+            border-left: 5px solid rgba(37, 59, 120, .2);
+            left: auto;
+            right: -5px;
+          }
+        }
       }
     }
   }

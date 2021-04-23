@@ -50,6 +50,7 @@ import os from 'os'
 import websocket from 'utils/websocket'
 import { remote } from 'electron'
 import Win from 'utils/winOptions'
+import db from '@/db'
 
 const creatWinFun = () => {
   Object.keys(Win).forEach(fun => {
@@ -95,6 +96,7 @@ export default {
         this.$router.push({ path: '/login' })
         return false
       }
+      db.userDB.creatDB(id)
       this.myWinId = remote.getCurrentWindow().id
       if (this.myWinId === 1) {
         websocket.init()

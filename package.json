@@ -18,6 +18,7 @@
     "core-js": "^3.6.5",
     "crypto-js": "^4.0.0",
     "dayjs": "^1.10.4",
+    "dexie": "^3.0.3",
     "electron-windows-badge": "^1.1.0",
     "fs": "^0.0.1-security",
     "node-sass": "npm:dart-sass",

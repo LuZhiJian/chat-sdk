@@ -96,6 +96,31 @@
   transform: scale($var);
 }
 
+@mixin scrollbar($display, $width, $radius, $bg, $color) {
+  ::-webkit-scrollbar
+  {
+    width: $width;
+    background-color: $bg;
+    display: $display;
+  }
+
+  /*定义滚动条轨道 内阴影+圆角*/
+  ::-webkit-scrollbar-track
+  {
+    // -webkit-box-shadow: inset 0 0 $width $color;
+    border-radius: $radius;
+    background-color: $bg;
+  }
+
+  /*定义滑块 内阴影+圆角*/
+  ::-webkit-scrollbar-thumb
+  {
+    border-radius: $radius;
+    // -webkit-box-shadow: inset 0 0 $width $color;
+    background-color: $color;
+  }
+}
+
 // placeholder
 @mixin placeholder-color($color) {
 

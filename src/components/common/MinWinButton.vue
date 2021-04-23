@@ -1,12 +1,12 @@
 <template>
   <div class="min-window-btn">
-    <div class="mac-win-btn" v-if="false">
-      <div :class="v.className" @click.stop="fun(v.name)" v-for="(v, i) in macBtns" :key="i">
+    <div class="win-win-btn" v-if="isWindows">
+      <div :class="v.className" @click.stop="fun(v.name)" v-for="(v, ii) in winBtns" :key="ii">
         <svgIcon :name="v.iconName" :size="v.size" />
       </div>
     </div>
-    <div class="win-win-btn" >
-      <div :class="v.className" @click.stop="fun(v.name)" v-for="(v, ii) in winBtns" :key="ii">
+    <div class="mac-win-btn" v-else>
+      <div :class="v.className" @click.stop="fun(v.name)" v-for="(v, i) in macBtns" :key="i">
         <svgIcon :name="v.iconName" :size="v.size" />
       </div>
     </div>
@@ -21,6 +21,7 @@ export default {
   },
   data() {
     return {
+      isWindows: process.platform === 'win32' ? true : false, //系统判断
       macBtns: [
         {
           name: 'close',

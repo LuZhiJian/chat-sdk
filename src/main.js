@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
+import database from './db'
 import svgIcon from "./components/icons/index.vue"
 
 const app = createApp(App)
@@ -27,5 +28,8 @@ app.config.globalProperties.$notify = {
     return store.dispatch('setNotify', obj)
   }
 }
+
+app.config.globalProperties.$contactsDB = database.userDB.contacts
+app.config.globalProperties.$chatUsersDB = database.userDB.chatUsers
 
 app.use(store).use(router).mount('#app')

@@ -266,7 +266,7 @@ export class Window {
           let win = this.getWindow(Number(i))
           if (!win) return
           if (win.isMinimized()) win.restore()
-          win.show()
+          if (win.id === 1) win.show()
         }
       }
     })

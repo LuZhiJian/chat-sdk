@@ -52,7 +52,7 @@
           </div>
         </div>
         <div class="contorl-box">
-          <div class="ct-btn">发消息</div>
+          <div class="ct-btn" @click.stop="chatting">发消息</div>
         </div>
       </div>
     </div>

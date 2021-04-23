@@ -87,7 +87,7 @@ export default {
   name: 'ChatTime',
   props: {
     chatTime: {
-      type: String
+      type: Number
     }
   },
   computed: {

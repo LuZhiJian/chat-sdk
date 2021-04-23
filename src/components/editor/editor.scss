@@ -1,0 +1,131 @@
+.editor-wrapper {
+  height: 159px;
+
+  .tools-line {
+    width: 100%;
+    padding: 0 10px;
+    font-size: 0;
+    position: relative;
+
+    .tool-item {
+      width: 40px;
+      height: 40px;
+      display: inline-block;
+      vertical-align: top;
+      text-align: center;
+      line-height: 40px;
+      cursor: pointer;
+      margin-right: 8px;
+      position: relative;
+
+      &.no-click{
+        cursor: inherit;
+        svg {
+          fill:#E0E0E0;
+        }
+      }
+
+      svg {
+        fill:#999;
+        vertical-align: middle;
+      }
+
+      &:active {
+        svg {
+          fill: $color-primary;
+        }
+      }
+    }
+
+    .send-btn {
+      display: block;
+      width: 54px;
+      height: 24px;
+      position: absolute;
+      top: 50%;
+      margin-top: -12px;
+      right: 10px;
+      border-radius: 13px;
+      background: #fff;
+      color:  $color-primary;
+      font-size: 12px;
+      user-select: none;
+      cursor: pointer;
+      border: none;
+      @include transition(.5s);
+
+      svg {
+        fill:$color-primary;
+        vertical-align: -2px;
+        margin-right: 5px;
+      }
+
+      &:disabled {
+        background: rgb(241, 241, 241);
+        color:  rgb(145, 145, 145);
+        @include transition(.5s);
+      }
+    }
+  }
+
+  .editor-textarea {
+    height: calc(100% - 40px);
+    padding: 0 15px;
+
+    .text-area {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      color: #000;
+      resize: none;
+      font-size: 14px;
+      line-height: 1.5;
+      background-color: #fff;
+      overflow-y:scroll;
+      outline: none;
+      white-space: pre-wrap;
+
+      img {
+        width: 20px;
+        vertical-align: middle;
+
+        &[name='cut_img'] {
+          width: 130px;
+          vertical-align: text-bottom;
+        }
+      }
+
+      &:empty:before {
+        color: #969696;
+        content: attr(placeholder);
+      }
+      &::-webkit-scrollbar {
+        width: 8px;
+        height: 1px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        box-shadow: inset 0 0 5px rgba(225, 225, 226, 0.2);
+        background: #bbbbbb;
+      }
+
+      &::-webkit-scrollbar-track {
+        border-radius: 0;
+        background: rgba(0, 0, 0, 0);
+      }
+    }
+    .text-area-bfshutup{
+      display: block;
+      width: 100%;
+      height: 68px;
+      line-height: 68px;
+      border: 0;
+      user-select: none;
+      text-align: center;
+      color: #919191;
+      font-size:14px;
+    }
+  }
+}

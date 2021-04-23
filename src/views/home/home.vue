@@ -11,14 +11,14 @@
         </div>
       </div>
       <div class="chatting-user-list">
-        <div :class="'user-item ' + (chatUser.userInfo.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chaattingList" :key="v.userInfo.uid" @click.stop="chatting(v)">
+        <div :class="'user-item ' + (chatUser.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chattingList" :key="v.userInfo.uid" @click.stop="chatting(v)">
           <div class="av-box">
             <Avatar :userInfo="v" />
           </div>
           <div class="txt-box">
             <div class="top-line">
               <span class="nick-name">{{ v.userInfo.nickName }}</span>
-              <ChatTime :chatTime="v.stmp" />
+              <ChatTime :chatTime="v.time" />
             </div>
             <div class="bt-line">
               <span class="msg-txt" v-if="v.unread">[{{ v.unread }}条]</span>
@@ -31,15 +31,65 @@
     </div>
     <div class="right-inner">
       <div class="chat-head drag">
-        <div class="chat-name no-drag">{{ chatUser.userInfo.nickName }}<span v-if="chatUser && chatUser.groupCount">({{ chatUser.groupCount }})</span></div>
-        <div class="more-info-btn no-drag">
+        <div class="chat-name no-drag" v-if="chatUser.userInfo">{{ chatUser.userInfo.nickName }}<span v-if="chatUser && chatUser.groupCount">({{ chatUser.groupCount }})</span></div>
+        <div class="more-info-btn no-drag" v-if="chatUser.uid">
           <svgIcon name="more" size="20px" color="#333" />
         </div>
       </div>
-      <div class="message-main-inner"></div>
+      <div class="message-main-inner">
+        <div class="message-main-scroll" id="message-scroll">
+          <div class="message-main-bying">
+            <div class="message-item">
+              <div class="time-line">下午 4:30</div>
+              <div class="msg-line">
+                <Avatar :userInfo="chatUser" />
+                <div class="msg-box">
+                  <div class="msg">今天过得怎么样，梦想是不是更远了？</div>
+                </div>
+              </div>
+            </div>
+            <div class="message-item me">
+              <div class="time-line">下午 4:30</div>
+              <div class="msg-line">
+                <Avatar :userInfo="chatUser" />
+                <div class="msg-box">
+                  <div class="msg">今天过得怎么样，梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？</div>
+                </div>
+              </div>
+            </div>
+            <div class="message-item">
+              <div class="time-line">下午 4:30</div>
+              <div class="msg-line">
+                <Avatar :userInfo="chatUser" />
+                <div class="msg-box">
+                  <div class="msg">今天过得怎么样，梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？</div>
+                </div>
+              </div>
+            </div>
+            <div class="message-item me">
+              <div class="time-line">下午 4:30</div>
+              <div class="msg-line">
+                <Avatar :userInfo="chatUser" />
+                <div class="msg-box">
+                  <div class="msg">今天过得怎么样，梦想是不是更远了？今天过？</div>
+                </div>
+              </div>
+            </div>
+            <div class="message-item me">
+              <div class="time-line">下午 4:30</div>
+              <div class="msg-line">
+                <Avatar :userInfo="chatUser" />
+                <div class="msg-box">
+                  <div class="msg">今天过得怎么样，梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？梦想是不是更远了？今天过得怎么样，梦想是不是更远了？</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="editor-wrapper">
         <div class="editor-inner">
-
+          <editor></editor>
         </div>
       </div>
     </div>
