@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron'
 import Win from 'utils/winOptions'
+import { deepClone } from 'utils/common'
 
 const cutName = (str) => {
   if (str && str.length > 18) return `${str.substr(0, 18)}...`
@@ -28,6 +29,10 @@ export default {
 	methods: {
     showAvatar(info) {
       Win.avatar(info)
+    },
+    chatting(user) {
+      const userData = deepClone(user)
+      ipcRenderer.send('chat-to-chat', userData)
     }
 	}
 }

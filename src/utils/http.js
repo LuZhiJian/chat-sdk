@@ -9,7 +9,6 @@ const $notify = (type, msg, time) => {
     msg: msg,
     time: time || 3000
   }
-  console.log(obj)
   return store.dispatch('setNotify', obj)
 }
 

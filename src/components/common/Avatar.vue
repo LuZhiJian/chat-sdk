@@ -1,7 +1,7 @@
 <template>
-  <div :class="'u-avatar ' + (+info.userInfo.uid === 10002 ? 'u-helper' : +info.userInfo.uid === -10002 ? 'g-notice' : +info.groupId ? 'group' : 'user')">
+  <div :class="'u-avatar ' + (+info.uid === 10002 ? 'u-helper' : +info.uid === -10002 ? 'g-notice' : +info.groupId ? 'group' : 'user')" v-if="info && info">
     <MsgTag v-if="info.tag" :tag="info.tag" :disturb="info.disturb" />
-    <div class="img-path" :style="{backgroundImage: 'url(' + info.userInfo.icon + ')'}"></div>
+    <div class="img-path" :style="{backgroundImage: 'url(' + info.icon + ')'}"></div>
     <online-state v-if="+info.isShowOnline" :status="info.isOnline"></online-state>
   </div>
 </template>
@@ -27,7 +27,7 @@ export default {
   },
   methods: {
     onUserChange(user) {
-      this.info = user
+      this.info = user.userInfo || user
     }
   },
   watch: {

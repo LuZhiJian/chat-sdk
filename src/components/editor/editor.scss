@@ -55,15 +55,16 @@
       @include transition(.5s);
 
       svg {
-        fill:$color-primary;
+        fill: $color-primary;
         vertical-align: -2px;
         margin-right: 5px;
       }
 
       &:disabled {
-        background: rgb(241, 241, 241);
-        color:  rgb(145, 145, 145);
-        @include transition(.5s);
+        cursor: not-allowed;
+        svg {
+          fill: #ccc;
+        }
       }
     }
   }
@@ -93,6 +94,11 @@
         &[name='cut_img'] {
           width: 130px;
           vertical-align: text-bottom;
+        }
+
+        &[src*="/emg"] {
+          width: 30px;
+          vertical-align: middle;
         }
       }
 

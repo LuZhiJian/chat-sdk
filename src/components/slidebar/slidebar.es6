@@ -18,7 +18,7 @@ export default {
           size: '24px',
           path: '#/',
           name: 'Home',
-          tag: 1
+          tag: 0
         },
         {
           iconName: 'list',
@@ -35,7 +35,7 @@ export default {
 	},
 	methods: {
     showCard(user) {
-      Win.card(user)
+      Win.card(Object.assign(user, {loginId: user.uid}))
     }
 	},
   watch: {

@@ -14,6 +14,7 @@ const requireAll = requireContext => requireContext.keys().map(requireContext)
 const req = require.context('./components/icons/svg', false, /\.svg$/)
 requireAll(req)
 
+
 app.config.globalProperties.$notify = {
   open: (type, msg, time) => {
     const obj = {
@@ -31,5 +32,6 @@ app.config.globalProperties.$notify = {
 
 app.config.globalProperties.$contactsDB = database.userDB.contacts
 app.config.globalProperties.$chatUsersDB = database.userDB.chatUsers
+app.config.globalProperties.$msgDB = database.msgDB
 
 app.use(store).use(router).mount('#app')

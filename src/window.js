@@ -5,7 +5,7 @@ import Badge from 'electron-windows-badge'
 
 const isWindows = process.platform === 'win32' ? true : false; //系统判断
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const appName = isDevelopment ? 'peanut' : 'peanutTest'
+const appName = isDevelopment ? 'peanutTest' : 'peanut'
 
 export const windowsCfg = {
   id: '', //唯一id
@@ -33,6 +33,7 @@ export const windowsCfg = {
 export class Window {
   constructor() {
     this.main = null; //当前页
+    this.homeWin = null;
     this.group = {}; //窗口组
     this.tray = null; //托盘
     this.isClose = false; //控制关闭程序
@@ -130,7 +131,6 @@ export class Window {
     if (args.minWidth) opt.minWidth = args.minWidth
     if (args.minHeight) opt.minHeight = args.minHeight
     if (args.isMainWin) opt.titleBarStyle = 'hidden'
-    // console.log(opt)
     let win = new BrowserWindow(opt)
     // console.log('窗口id：' + win.id)
     this.group[win.id] = {
@@ -156,6 +156,7 @@ export class Window {
         decimals: 0,
         radius: 8
       }
+      this.homeWin = win
       new Badge(win, badgeOptions);
     }
     args.id = win.id
@@ -369,8 +370,11 @@ export class Window {
     // 创建窗口
     ipcMain.on('window-new', (event, args) => {
       this.createWindows(args)
-      // console.log(event)
-      // if (args.win) event.reply(args.win, args.data)
+    })
+
+    // 卡片聊天按钮
+    ipcMain.on('chat-to-chat', (event, args) => {
+      this.main.webContents.send('chat-to-chat', args)
     })
   }
 }

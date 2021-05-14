@@ -7,7 +7,9 @@ export default createStore({
     notifyData: {},
     contactsTime: storage.lcGet('contacts_time'),
     contactsShowUser: storage.lcGet('contacts_show_user'),
-    chattingUser: storage.lcGet('chat_ing_user')
+    chattingUser: storage.lcGet('chat_ing_user'),
+    dbMessageData: {},
+    ossClient: storage.ssGet('ossClient')
   },
   mutations: {
     'setLoginData'(state, info) {
@@ -34,6 +36,13 @@ export default createStore({
       state.chattingUser = user
       storage.lcSet('chat_ing_user', user)
     },
+    'setDBMessageData'(state, obj) {
+      state.dbMessageData = obj
+    },
+    'setOssClient'(state, info) {
+      state.ossClient = info
+      storage.ssSet('oss_client', info)
+    },
   },
   actions: {
     setLoginData({ commit }, info) {
@@ -50,6 +59,12 @@ export default createStore({
     },
     setChatUser({ commit }, user) {
       commit('setChatUser', user)
+    },
+    setDBMessageData({ commit }, listObj) {
+      commit('setDBMessageData', listObj)
+    },
+    setOssClient({ commit }, data) {
+      commit('setOssClient', data)
     },
   }
   // modules: {

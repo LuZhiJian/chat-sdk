@@ -6,13 +6,16 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { Window } from './window'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+let window = null
+const appName = isDevelopment ? 'peanutTest' : 'peanut'
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
+  { scheme: appName, privileges: { secure: true, standard: true } }
 ])
 
 async function createWindow() {
-  let window = new Window()
+  window = new Window()
   window.listen()
   window.createWindows({isMainWin: true})
   window.createTray()
@@ -27,19 +30,50 @@ app.on('window-all-closed', () => {
   }
 })
 
+app.on('before-quit',()=>{
+  window.isClose = true
+})
+
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  // 限制只可以打开一个应用, 4.x的文档
+  const gotTheLock = app.requestSingleInstanceLock()
+  if (!gotTheLock) {
+    app.exit()
+  } else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      if (window.main) {
+        // if (window.win.isMinimized()){
+        //   newWindow.win.restore()
+        // }
+        window.main.focus()
+        window.main.show()
+      }
+    })
+  }
+  // On macOS it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+  } else {
+    window.main.show()
+  }
 })
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
+      protocol.registerFileProtocol('file', (request, callback) => {
+      const pathname = decodeURI(request.url.replace('file:///', ''));
+      // const pathname = decodeURIComponent(request.url.replace('file:///', ''));
+      callback(pathname);
+    })
       await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())

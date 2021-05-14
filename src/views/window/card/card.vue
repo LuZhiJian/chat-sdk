@@ -1,6 +1,6 @@
 <template>
 	<div class="card-wrapper">
-    <div class="card-content">
+    <div class="card-content" v-if="cardData">
       <div class="top-inners">
         <div class="info-box">
           <div class="nick-name-box">
@@ -23,8 +23,8 @@
           <div class="keys">{{ cardData.signature }}</div>
         </div>
       </div>
-      <div class="contorl-box">
-        <div class="ct-btn">发消息</div>
+      <div class="contorl-box" v-if="cardData.uid !== cardData.loginId">
+        <div class="ct-btn" @click.stop="chatting(cardData)">发消息</div>
       </div>
     </div>
 	</div>

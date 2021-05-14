@@ -143,7 +143,7 @@ const socket = {
    */
   receive: async (message) => {
     const smgContent = await Cat.receiveFun(message)
-    console.log(smgContent);
+    // console.log(smgContent);
   },
 
   /**

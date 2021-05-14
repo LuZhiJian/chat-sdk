@@ -52,6 +52,11 @@
         float: left;
         line-height: 40px;
         @extend .ellipsis;
+
+        i {
+          font-style: normal;
+          color: #f00;
+        }
       }
     }
   }

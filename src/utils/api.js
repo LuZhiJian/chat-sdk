@@ -5,4 +5,10 @@ export default {
   login: (params) => http.post('/login/webLogin', params),
   // 联系人列表
   contactList: (params) => http.post('/contact/contactList', params),
+  // 获取上传路径
+  getUploadUrl: (params) => http.post('/sys/getUploadUrl', params),
+  // 获取oss上传token
+  getOSSToken: (params) => http.post('/sys/getOSSToken', params),
+  // 联系人详情
+  contactDetail: (params) => http.post('/contact/contactDetail', params),
 };

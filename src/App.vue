@@ -91,12 +91,16 @@ export default {
       console.log(e)
     },
     onLoginChange(id) {
-      console.log(id)
+      const loginData = this.$store.state.loginData || {}
+      const uid = loginData.userInfo && loginData.userInfo.uid
       if (!id) {
         this.$router.push({ path: '/login' })
         return false
       }
-      db.userDB.creatDB(id)
+      db.userDB.creatDB(uid)
+      db.msgDB.creatUserDB(uid)
+      db.msgDB.creatGroupDB(uid)
+
       this.myWinId = remote.getCurrentWindow().id
       if (this.myWinId === 1) {
         websocket.init()

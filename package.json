@@ -13,6 +13,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "ali-oss": "^6.15.2",
     "axios": "^0.21.1",
     "babel-loader": "^8.2.2",
     "core-js": "^3.6.5",
@@ -21,6 +22,7 @@
     "dexie": "^3.0.3",
     "electron-windows-badge": "^1.1.0",
     "fs": "^0.0.1-security",
+    "lrz": "^4.9.41",
     "node-sass": "npm:dart-sass",
     "os": "^0.1.1",
     "sass-loader": "10.1.1",

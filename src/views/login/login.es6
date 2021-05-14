@@ -6,7 +6,7 @@ export default {
 	},
 	data () {
 		return {
-      code: '5VKVXXFW'
+      code: ''
 		}
 	},
 	mounted() {
@@ -19,6 +19,8 @@ export default {
       api.login({ param }).then((res) => {
         this.$store.dispatch('setLoginData', res)
         this.$router.push({ path: '/' })
+      }).catch(err => {
+        this.$notify.open('error', '授权码不正确~')
       })
     }
 	}

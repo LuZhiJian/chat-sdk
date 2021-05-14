@@ -1,5 +1,7 @@
-import userDB from './table'
+import userDB from './user'
+import msgDB from './massege'
 
 export default {
-  userDB
+  userDB,
+  msgDB
 }

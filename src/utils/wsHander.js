@@ -1,16 +1,70 @@
 import constant from './constant'
 import store from '../store'
 import { getAesString, getDAesString, stringToUint8Array, uint8ArrayToString } from './aes'
+import db from '@/db'
+
+const sendCase = (code, param) => {
+  let obj = {
+    seq: param.flag || new Date().getTime(),
+    body: {}
+  }
+  const loginData = store.state.loginData || {}
+  const loginUid = loginData.userInfo && loginData.userInfo.uid
+  switch (code) {
+    case 1000:
+      obj.body = {
+        sessionId: loginData.sessionId,
+        plat: 3,
+        version: constant.SDK_VERSION
+      }
+      break;
+    case 1001:
+      obj.body = {}
+      break;
+    case 1002:
+      obj.body = {
+        fromUid: param.fromUid || loginUid,
+        toUid: param.toUid,
+        msgType: param.type,
+        content: param.content,
+        flag: param.flag,
+        time: param.time,
+        uid: param.toUid
+      }
+      if (!param.fileId) {
+        db.msgDB.add(obj.body)
+      }
+      break;
+
+    default:
+      break;
+  }
+  return obj
+}
+
+const receiveCase = (protorlId, res = {}) => {
+  console.log(protorlId)
+  switch (protorlId) {
+    case 1000:
+      console.log('websocket 登录成功!');
+      break;
+    case 1001:
+      console.log('心跳回应!');
+      break;
+    case 1002:
+      const msg = Object.assign({index: 'flag'}, res)
+      console.log(msg)
+      db.msgDB.update(msg)
+      break;
+    default:
+      break;
+  }
+}
 
 const Cat = {
   sendFun(code, data) {
     return new Promise(resolve => {
-      const loginData = store.state.loginData || {}
-      const messageContent = code === 1000 ? {
-        sessionId: loginData.sessionId,
-        plat: 3,
-        version: constant.SDK_VERSION
-      } : data
+      const messageContent = sendCase(code, data)
       const dataString = JSON.stringify(messageContent)
       const dataBytes = stringToUint8Array(dataString)
       const sendMsg = getAesString(dataBytes, constant.API_KEY);
@@ -37,19 +91,15 @@ const Cat = {
         const dv = new DataView(buff)
         const protorlId = dv.getUint16(2) // 协议id
         const length = dv.getUint32(4)
-        switch (protorlId) {
-          case 2000:
-            console.log('websocket 登录成功!');
-            break;
-          case 2001:
-            console.log('心跳回应!');
-            break;
-          default:
-            break;
-        }
         const msgContent = getDAesString(new Uint8Array(buff.slice(8)), constant.API_KEY)
-        const res = JSON.parse(uint8ArrayToString(msgContent));
-        resolve(res);
+        const res = JSON.parse(uint8ArrayToString(msgContent))
+        if (+res.code === 200) {
+          console.log(protorlId)
+          receiveCase(protorlId, res.body)
+          resolve(res.body)
+        } else {
+          console.log('sw响应错误')
+        }
       }
     })
   }

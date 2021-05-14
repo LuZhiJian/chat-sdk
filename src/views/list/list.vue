@@ -4,18 +4,32 @@
       <div class="search-box drag">
         <div class="input-view no-drag">
           <svgIcon name="search" class="icon-search" size="16" />
-          <input type="text" ref="search" v-model.trim="searchValue" placeholder="搜索">
+          <input type="text" ref="search" v-model.trim="searchValue" placeholder="搜索" @input="searchChatList" @keydown.esc="clear">
           <div class="clear-btn" v-show="searchValue" @click.stop="clear">
             <svgIcon name="clear" size="16" />
           </div>
         </div>
       </div>
       <div class="user-list">
-        <dl>
+        <dl v-if="searchValue && searchValue.length">
+          <dt>搜索结果 <span>（{{ searchList.length }}）</span></dt>
+          <dd>
+            <ul class="user-tree" v-if="searchList.length">
+              <li :class="showUser && showUser.userInfo && v.uid === showUser.userInfo.uid ? 'active' : ''" v-for="(v, i) in searchList" :key="i" @click.stop="showing(v)">
+                <div class="av-box">
+                  <Avatar :userInfo="v" />
+                </div>
+                <div class="nick-name" v-html="v.userInfo.showName"></div>
+              </li>
+            </ul>
+            <div class="null-data" v-else>无搜索结果</div>
+          </dd>
+        </dl>
+        <dl v-else>
           <dt>联系人 <span v-if="contactCount">（{{ contactCount }}）</span></dt>
           <dd>
             <ul class="user-tree">
-              <li :class="showUser && v.userInfo.uid === showUser.userInfo.uid ? 'active' : ''" v-for="(v, i) in list" :key="i" @click.stop="showing(v)">
+              <li :class="showUser && showUser.userInfo && v.uid === showUser.userInfo.uid ? 'active' : ''" v-for="(v, i) in list" :key="i" @click.stop="showing(v)">
                 <div class="av-box">
                   <Avatar :userInfo="v" />
                 </div>
@@ -28,7 +42,7 @@
     </div>
     <div class="right-inner">
       <div class="drag-wrapper drag"></div>
-      <div class="show-user-inner" v-if="showUser">
+      <div class="show-user-inner" v-if="showUser && showUser.userInfo">
         <div class="top-inners">
           <div class="info-box">
             <div class="nick-name-box">

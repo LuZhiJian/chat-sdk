@@ -1,7 +1,7 @@
 import api from 'utils/api'
 import { Avatar } from 'components'
 import Win from 'utils/winOptions'
-import { deepClone } from 'utils/common'
+import { deepClone, vagueSearchList } from 'utils/common'
 import { ipcRenderer } from 'electron'
 
 export default {
@@ -17,9 +17,13 @@ export default {
         pageSize: 10000
       },
       list: [],
+      searchList: [],
       contactCount: 0
 		}
 	},
+  setup() {
+
+  },
 	mounted() {
     this.getList()
 	},
@@ -27,6 +31,10 @@ export default {
     clear() {
       this.searchValue = ''
       this.$refs.search.focus()
+    },
+    searchChatList() {
+      const str = this.searchValue
+      this.searchList = vagueSearchList(this.list, str)
     },
     getList() {
       const param = Object.assign({
@@ -56,7 +64,6 @@ export default {
     },
     chatting() {
       const user = this.showUser
-      console.log(user)
       this.$store.dispatch('setChatUser', user)
       this.$chatUsersDB.addChatUser(user)
       setTimeout(() => {

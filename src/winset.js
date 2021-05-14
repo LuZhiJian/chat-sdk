@@ -3,7 +3,7 @@ import { ipcRenderer } from 'electron'
  * 创建窗口
  */
 export function windowCreate(args) {
-  console.log(args)
+  // console.log(args)
   ipcRenderer.send('window-new', args)
 }
 

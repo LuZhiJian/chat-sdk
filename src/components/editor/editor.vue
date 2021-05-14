@@ -5,22 +5,21 @@
         <div class="contorl-box" @click.stop="faceClickHandle">
           <svgIcon name="emoji" size="24" />
         </div>
-        <!-- <emoji-face class="emoji-block" @select="selectEmoji"></emoji-face> -->
+        <emoji-face class="emoji-block" @select="selectEmoji" v-show="emoji"></emoji-face>
       </a>
       <a href="javascript:;" class="tool-item">
-        <svgIcon name="file" size="24" />
-        <!-- <upload-file ref="uploader">
-          <icon name="file" width="24" height="24"></icon>
-        </upload-file> -->
+        <upload-file ref="uploaders" :uid="newUser.uid"  @uploaddata="uploadData" @progress="getProgress" @uploaded="uploadSuccess" @uploaderr="uploadRrror">
+          <svgIcon name="file" size="24" />
+        </upload-file>
       </a>
       <a href="javascript:;" class="tool-item">
         <svgIcon name="cut" size="24" />
         <!-- <cut></cut> -->
       </a>
-      <button class="send-btn"><svgIcon name="send" size="14" /></button>
+      <button class="send-btn" @click.stop="enterFun" :disabled="!trueContent"><svgIcon name="send" size="14" /></button>
     </div>
     <div class="editor-textarea">
-      <div id="text-area" class="text-area" ref="textarea" contenteditable="true" @keydown.13.exact="enterFun" @keydown.ctrl.13.exact="ctrlAndEnter" @keydown.meta.13.exact="ctrlAndEnter" @input.sync="inputHandle" v-html="curContent"></div>
+      <div id="text-area" class="text-area" ref="textarea" contenteditable="true" @keydown.enter.exact="enterFun" @keydown.ctrl.enter.exact="ctrlOrMetaEnter" @paste.prevent="pasteHandle" @keydown.meta.enter.exact="ctrlOrMetaEnter" @input.sync="inputHandle" v-html="curContent"></div>
     </div>
 	</div>
 </template>

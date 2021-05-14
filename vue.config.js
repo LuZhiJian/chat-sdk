@@ -52,7 +52,7 @@ module.exports = {
       customFileProtocol: "/",
       builderOptions: {
         "appId": `co.sdk.web${myAppName}`,
-        "productName": myAppName,
+        "productName": '花生大少',
         "copyright": process.env.VUE_APP_COPYRIGHT, //版权信息
         "directories": {
           "output": "./appDist" //输出文件路径
@@ -61,6 +61,10 @@ module.exports = {
           "from": "./static",
           "to": "static"
         }], // 拷贝静态文件到指定位置
+    //     , {
+    // 　　　 "from": "./static/qq/PrScrn.dll",
+    // 　　　 "to": "./extraResources/PrScrn.dll"
+    // 　　 }
         "win": { //win相关配置
           "icon": "./src/assets/logo.ico",
           // "requestedExecutionLevel": "highestAvailable", //权限
@@ -79,7 +83,7 @@ module.exports = {
           ],
         },
         "compression": "maximum", // 压缩级别，如果要打包成安装包的话建议设为 maximum 可以使安装包体积更小，当然打包时间会长一点点
-        "asar": false, // 设置为 true 可以把自己的代码合并并加密
+        "asar": true, // 设置为 true 可以把自己的代码合并并加密
         // "version": '1.0.2',
         "nsis": {
           'oneClick': false,
@@ -97,11 +101,11 @@ module.exports = {
         },
         'mac': {
           'target': 'dmg',
-          'icon': './static/logo.png'
+          'icon': './static/logo-x2.png'
         },
         'dmg': {
           'title': 'sdk',
-          'icon': './static/logo.png',
+          'icon': './static/logo-x2.png',
           'contents': [
             {
               'x': 110,

@@ -15,10 +15,11 @@ const updateVerDB = (tableName, db) => {
     mydb = new Dexie(tableName)
     mydb.version(version).stores(mytables).upgrade(tx => {
       // console.log(tx)
+      mydb.open()
     })
     setTimeout(() => {
       resolve(mydb)
-    }, 500)
+    }, 200)
   })
 }
 
@@ -98,6 +99,7 @@ const userDB = {
       mydb = mydb ? mydb : await openDB()
       return new Promise(async resolve => {
         const list = await mydb.contacts.toArray()
+        console.log(list)
         resolve(list)
       })
     },
