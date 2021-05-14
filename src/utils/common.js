@@ -405,3 +405,18 @@ export const keepLastIndex = obj => {
     range.collapseToEnd()// 光标移至最后
   }
 }
+
+export const checkFile = file => {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      // 文件
+      resolve(true)
+    }
+    reader.onerror = (e) => {
+      // 文件夹
+      resolve(false)
+    }
+    reader.readAsText(file)
+  })
+}

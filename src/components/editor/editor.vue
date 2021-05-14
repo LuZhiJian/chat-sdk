@@ -19,7 +19,7 @@
       <button class="send-btn" @click.stop="enterFun" :disabled="!trueContent"><svgIcon name="send" size="14" /></button>
     </div>
     <div class="editor-textarea">
-      <div id="text-area" class="text-area" ref="textarea" contenteditable="true" @keydown.enter.exact="enterFun" @keydown.ctrl.enter.exact="ctrlOrMetaEnter" @paste.prevent="pasteHandle" @keydown.meta.enter.exact="ctrlOrMetaEnter" @input.sync="inputHandle" v-html="curContent"></div>
+      <div id="text-area" class="text-area" ref="textarea" contenteditable="true" @drop.prevent="dragHandle($event)" @keydown.enter.exact="enterFun" @keydown.ctrl.enter.exact="ctrlOrMetaEnter" @paste.prevent="pasteHandle" @keydown.meta.enter.exact="ctrlOrMetaEnter" @input.sync="inputHandle" v-html="curContent"></div>
     </div>
 	</div>
 </template>

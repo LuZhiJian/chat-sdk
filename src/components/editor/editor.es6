@@ -2,7 +2,7 @@ import { ref, computed, watch, reactive, toRefs } from 'vue'
 import EmojiFace from 'components/emojiFace'
 import RangeUtil from 'components/emojiFace/rangeUtil'
 import UploadFile from 'components/common/UploadFile.vue'
-import { getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex } from 'utils/common'
+import { getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
 import fileFix from 'utils/fileSend'
 
 export default {
@@ -83,7 +83,6 @@ export default {
       this.$nextTick(() => {
         try {
           RangeUtil.replaceSelection(img)
-          this.$emit('on-input', this.curContent)
           $input.focus()
         } catch (e) {
           /* eslint-disable no-console */
@@ -136,92 +135,71 @@ export default {
       //   keepLastIndex(this.$refs.textarea)
       // })
     },
+    async dragHandle(e) {
+      // console.log(e)
+      const file = e.dataTransfer.files[0]
+      const size = file.size / 1024 / 1024
+      if (size > 50) {
+        this.$notify.open("error", "文件大小不能超过50M")
+        return false
+      } else if (this.$store.state.netState === 'offline') {
+        this.$notify.open("error", '网络不可用！请检查您的网络')
+        return false
+      }
+      const isFile = await checkFile(file)
+      if (file && isFile) {
+        const fileType = matchType(file.name).type
+        if ([2,3,4].includes(fileType)) {
+          this.$refs.uploaders.uploadingFun(file)
+        } else {
+          this.$notify.open("warning", 'Sorry~暂未开通发送文件功能噢')
+        }
+      }
+      return false
+    },
     pasteHandle(e) {
       let data = (e.clipboardData || window.clipboardData)
       if (!data && !data.items) {
         return false
       }
-      // const fileItem = data.files[0]
-      // const item = data.items[0]
-      // const host = location.origin
-      // const sy = `<img src="${host}/emoji/`
-      // if (fileItem) {
-      //   if (checkCutImg(this.$refs.textarea.innerHTML)) {
-      //     this.$notify.open('warning', '暂时不支持粘贴多张图片哦')
-      //     return false
-      //   }
-      //   const file = fileItem
-      //   const {img, id} = await imgFileGetImg(file)
-      //   const $input = this.$refs.textarea
-      //   $input.focus()
-      //   if (this.selection) {
-      //     RangeUtil.restoreSelection(this.selection)
-      //   }
-      //   this.$nextTick(() => {
-      //     try {
-      //       this.cutImgObj[this.chattingUser.uid] = {
-      //         file: file,
-      //         id: id
-      //       }
-      //       this.$store.dispatch('setPasteImgObj', this.cutImgObj)
-      //       RangeUtil.replaceSelection(img)
-      //       this.content = decodeEmoji($input.innerHTML)
-      //       this.setDftxt(this.content)
-      //       this.$emit('on-input', this.content)
-      //       $input.focus()
-      //       this.pasteContentChange()
-      //     } catch (e) {
-      //       /* eslint-disable no-console */
-      //       console.error(e)
-      //     }
-      //   })
-      //   return false
-      // } else if (item && item.kind === 'string') {
-      //   item.getAsString(str => {
-      //     if (str.indexOf(sy) >= 0) {
-      //       return false
-      //     }
-      //     // str 是获取到的字符串
-      //     const $input = this.$refs.textarea
-      //     this.pasteHtmlAtCaret(str)
-      //     this.content = decodeEmoji($input.innerHTML)
-      //     this.setDftxt(this.content)
-      //     this.$emit('on-input', this.content)
-      //     this.pasteContentChange()
-      //   })
-      // } else if (fileItem || (item.kind === 'file' && item.type.indexOf('image/') !== -1)) {
-      //   if (checkCutImg(this.$refs.textarea.innerHTML)) {
-      //     this.$notify.open('warning', '暂时不支持粘贴多张图片哦')
-      //     return false
-      //   }
-      //   const file = item.getAsFile()
-      //   const {img, id} = await imgFileGetImg(file)
-      //   const $input = this.$refs.textarea
-      //   $input.focus()
-      //   if (this.selection) {
-      //     RangeUtil.restoreSelection(this.selection)
-      //   }
-      //   this.$nextTick(() => {
-      //     try {
-      //       this.cutImgObj[this.chattingUser.uid] = {
-      //         file: file,
-      //         id: id
-      //       }
-      //       this.$store.dispatch('setPasteImgObj', this.cutImgObj)
-      //       RangeUtil.replaceSelection(img)
-      //       this.content = decodeEmoji($input.innerHTML)
-      //       this.setDftxt(this.content)
-      //       this.$emit('on-input', this.content)
-      //       $input.focus()
-      //       this.pasteContentChange()
-      //     } catch (e) {
-      //       /* eslint-disable no-console */
-      //       console.error(e)
-      //     }
-      //   })
-      // } else {
-      //   return false
-      // }
+      const item = data.items[0]
+      if (item && item.kind === 'string') {
+        item.getAsString(str => {
+          // str 是获取到的字符串
+          const $input = this.$refs.textarea
+          this.pasteHtmlAtCaret(str)
+          const value = decodeEmoji($input.innerHTML)
+          this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+        })
+      }
+      return false
+    },
+    //光标位置插入内容
+    pasteHtmlAtCaret(html) {
+      let sel, range;
+      if (window.getSelection) {
+        sel = window.getSelection()
+        if (sel.getRangeAt && sel.rangeCount) {
+          range = sel.getRangeAt(0)
+          range.deleteContents()
+          var el = document.createElement("span")
+          el.innerHTML = parseEmoji(html)
+          var frag = document.createDocumentFragment()
+          var nodeVM
+          let lastNode;
+          while (nodeVM = el.firstChild) {
+            lastNode = frag.appendChild(nodeVM);
+          }
+          range.insertNode(frag);
+          if (lastNode) {
+            range = range.cloneRange();
+            range.setStartAfter(lastNode);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+          };
+        };
+      }
     },
     clearInput() {
       const el = this.$refs.textarea

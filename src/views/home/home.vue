@@ -67,14 +67,14 @@
             <div :class="'message-item ' + (v.uid !== +myInfo.uid ? 'me':'')" v-for="v in chatMessageList" :key="v.id">
               <ChatTime :chatTime="v.time" />
               <div class="msg-line">
-                <Avatar :userInfo="v.uid === +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
+                <Avatar :userInfo="v.uid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
                 <div class="msg-box" v-if="v.msgType === 1">
                   <div class="msg" v-html="decodeEmojiHtml(v.content.content)"></div>
                 </div>
                 <div class="msg-box img" v-else-if="v.msgType === 2">
-                  <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
+                  <!-- <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
                     <svgIcon name="clear" />
-                  </div>
+                  </div> -->
                   <div class="msg">
                     <img :src="initImg(v.content.url)">
                   </div>

@@ -97,7 +97,7 @@ export default {
       })
     },
     showCard(uid) {
-      const user = uid === +this.myInfo.uid ? this.myInfo : (this.chatUser && this.chatUser.userInfo)
+      const user = uid !== +this.myInfo.uid ? this.myInfo : (this.chatUser && this.chatUser.userInfo)
       const userData = Object.assign(user, {loginId: this.myInfo.uid})
       Win.card(userData)
     },
