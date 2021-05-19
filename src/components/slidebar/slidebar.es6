@@ -24,7 +24,8 @@ export default {
           iconName: 'list',
           size: '22px',
           path: '#/list',
-          name: 'List'
+          name: 'List',
+          tag: 0
         }
       ],
       netState: 1,

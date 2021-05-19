@@ -25,19 +25,36 @@
             <div class="null-data" v-else>无搜索结果</div>
           </dd>
         </dl>
-        <dl v-else>
-          <dt>联系人 <span v-if="contactCount">（{{ contactCount }}）</span></dt>
-          <dd>
-            <ul class="user-tree">
-              <li :class="showUser && showUser.userInfo && v.uid === showUser.userInfo.uid ? 'active' : ''" v-for="(v, i) in list" :key="i" @click.stop="showing(v)">
-                <div class="av-box">
-                  <Avatar :userInfo="v" />
-                </div>
-                <div class="nick-name">{{ v.remarkName || v.userInfo.nickName}}</div>
-              </li>
-            </ul>
-          </dd>
-        </dl>
+        <div v-else>
+          <dl>
+            <dt :class="newTabVisible ? 'show':''" @click.stop="newTabVisible = !newTabVisible">新的朋友 <svgIcon name="right" size="16" color="#999" /></dt>
+            <dd>
+              <ul class="user-tree">
+                <li :class="'new ' + (showUser && showUser.addType && showUser.userInfo && user.uid === showUser.uid ? 'active' : '')" v-for="(user, i) in applyList" :key="i" @click.stop="showing(user)">
+                  <div class="av-box">
+                    <Avatar :userInfo="user" />
+                  </div>
+                  <div class="nick-name">{{ user.userInfo.nickName }}</div>
+                  <div class="desc">{{ user.msg }}</div>
+                  <div class="status">{{ initStatus(user.status) }}</div>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+          <dl>
+            <dt :class="contactsTabVisible ? 'show':''" @click.stop="contactsTabVisible = !contactsTabVisible">联系人 <span v-if="contactCount">（{{ contactCount }}）</span><svgIcon name="right" size="16" color="#999" /></dt>
+            <dd>
+              <ul class="user-tree">
+                <li :class="showUser && !showUser.addType &&showUser.userInfo && v.uid === showUser.userInfo.uid ? 'active' : ''" v-for="(v, i) in list" :key="i" @click.stop="showing(v)">
+                  <div class="av-box">
+                    <Avatar :userInfo="v" />
+                  </div>
+                  <div class="nick-name">{{ v.remarkName || v.userInfo.nickName}}</div>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+        </div>
       </div>
     </div>
     <div class="right-inner">
@@ -65,8 +82,22 @@
             <div class="keys">{{ showUser.userInfo.signature }}</div>
           </div>
         </div>
+        <div class="info-detail-inners" v-if="showUser.addType">
+          <div class="detail-line">
+            <span>添加来源</span>
+            <div class="keys">{{ showUser.addType === 2 ? '群聊添加' : '查找添加' }}</div>
+          </div>
+          <div class="detail-line">
+            <span>打招呼</span>
+            <div class="keys">{{ showUser.msg }}</div>
+          </div>
+        </div>
         <div class="contorl-box">
-          <div class="ct-btn" @click.stop="chatting">发消息</div>
+          <div class="control-line" v-if="[1, 3].includes(showUser.status)">
+            <button class="green" @click.stop="apply(1)" :disabled="+showUser.status === 3">{{showUser.status === 3 ? '已过期':'同意'}}</button>
+            <button class="del" @click.stop="apply(3)">删除</button>
+          </div>
+          <div class="ct-btn" @click.stop="chatting" v-else>发消息</div>
         </div>
       </div>
     </div>

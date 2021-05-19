@@ -1,7 +1,30 @@
 import constant from './constant'
 import store from '../store'
 import { getAesString, getDAesString, stringToUint8Array, uint8ArrayToString } from './aes'
+import { deepClone } from './common'
+import md5 from 'js-md5'
 import db from '@/db'
+
+const getAesKey = (loginId, uid) => {
+  return md5(`${loginId}_${uid}`)
+}
+
+const getDaesKey = (loginId, uid) => {
+  return md5(`${uid}_${loginId}`)
+}
+
+const setContent = (content, key) => {
+  const dataBytes = stringToUint8Array(JSON.stringify(content))
+  const asContent = getAesString(dataBytes, key)
+  return asContent
+}
+
+const getContent = (content, key) => {
+  const dataBytes = getDAesString(content, key)
+  const dsContent = JSON.parse(uint8ArrayToString(new Uint8Array(dataBytes)))
+  return dsContent
+}
+
 
 const sendCase = (code, param) => {
   let obj = {
@@ -10,6 +33,7 @@ const sendCase = (code, param) => {
   }
   const loginData = store.state.loginData || {}
   const loginUid = loginData.userInfo && loginData.userInfo.uid
+  const key = param.toUid ? getAesKey(loginUid, param.toUid) : ''
   switch (code) {
     case 1000:
       obj.body = {
@@ -22,7 +46,7 @@ const sendCase = (code, param) => {
       obj.body = {}
       break;
     case 1002:
-      obj.body = {
+      const contentPak = {
         fromUid: param.fromUid || loginUid,
         toUid: param.toUid,
         msgType: param.type,
@@ -31,8 +55,11 @@ const sendCase = (code, param) => {
         time: param.time,
         uid: param.toUid
       }
+      const sendPak = deepClone(contentPak)
+      sendPak.content = setContent(param.content, key)
+      obj.body = sendPak
       if (!param.fileId) {
-        db.msgDB.add(obj.body)
+        db.msgDB.add(contentPak)
       }
       break;
 
@@ -44,6 +71,9 @@ const sendCase = (code, param) => {
 
 const receiveCase = (protorlId, res = {}) => {
   console.log(protorlId)
+  const loginData = store.state.loginData || {}
+  const loginUid = loginData.userInfo && loginData.userInfo.uid
+  const key = res.fromUid ? getDaesKey(loginUid, res.fromUid) : ''
   switch (protorlId) {
     case 1000:
       console.log('websocket 登录成功!');
@@ -56,6 +86,11 @@ const receiveCase = (protorlId, res = {}) => {
       console.log(msg)
       db.msgDB.update(msg)
       break;
+    case 2000:
+      const oneMsg = deepClone(res)
+      oneMsg.content = getContent(oneMsg.content, key)
+      db.msgDB.add(msg)
+      break;
     default:
       break;
   }
@@ -65,6 +100,7 @@ const Cat = {
   sendFun(code, data) {
     return new Promise(resolve => {
       const messageContent = sendCase(code, data)
+      console.log(messageContent)
       const dataString = JSON.stringify(messageContent)
       const dataBytes = stringToUint8Array(dataString)
       const sendMsg = getAesString(dataBytes, constant.API_KEY);

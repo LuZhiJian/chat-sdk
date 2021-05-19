@@ -11,4 +11,8 @@ export default {
   getOSSToken: (params) => http.post('/sys/getOSSToken', params),
   // 联系人详情
   contactDetail: (params) => http.post('/contact/contactDetail', params),
+  // 联系人申请列表
+  contactApplyList: (params) => http.post('/contact/contactApplyList', params),
+  // 更新好友申请
+  updateApply: (params) => http.post('/contact/updateContactApply', params),
 };

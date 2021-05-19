@@ -84,6 +84,7 @@ export default {
         try {
           RangeUtil.replaceSelection(img)
           $input.focus()
+          this.trueContent = $input.innerHTML.replace(/(^\s*)|(\s*$)/g, "")
         } catch (e) {
           /* eslint-disable no-console */
           console.error(e)
@@ -92,7 +93,6 @@ export default {
     },
     // 换行并重新定位光标位置
     textareaRange() {
-      console.log('????')
       var el = this.$refs.textarea
       var range = document.createRange()
       //返回用户当前的选区

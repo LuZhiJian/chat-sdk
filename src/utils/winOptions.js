@@ -33,7 +33,7 @@ const Win = {
         resizable: false,
         modal: true,
         maximize: false,
-        devTools: true
+        devTools: false
       },
       position: true,
       win: 'card-data',

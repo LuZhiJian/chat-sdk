@@ -1,7 +1,7 @@
 import constant from 'utils/constant'
 import store from '@/store'
-import emojiJson from 'components/emojiFace/emoji.json'
 
+import emojiJson from 'components/emojiFace/emoji.json'
 import iconTxt from 'assets/filetype/icon-txt.png'
 import iconApk from 'assets/filetype/icon-apk.png'
 import iconAudio from 'assets/filetype/icon-audio.png'
@@ -189,7 +189,7 @@ export const goBottom = () => {
   setTimeout(() => {
     let ele = document.getElementById('message-scroll')
     ele.scrollTop = ele.scrollHeight
-  }, 1)
+  }, 10)
 }
 
 // 转义
@@ -419,4 +419,11 @@ export const checkFile = file => {
     }
     reader.readAsText(file)
   })
+}
+
+export const intervalTime = (time) => {
+  const timestamp = new Date().getTime()
+  const date = (timestamp - time).toFixed(0)
+  const days = Math.floor(date / (24 * 3600 * 1000))
+  return days
 }
