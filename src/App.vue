@@ -4,7 +4,7 @@
       <WinBtnLine />
     </div>
     <div class="page-slide drag" v-if="loginSessionId && +this.myWinId === 1">
-      <SlideBar :data="myInfo" />
+      <SlideBar :data="myInfo" @logout="logout" />
     </div>
     <router-view/>
     <Notify />
@@ -87,6 +87,9 @@ export default {
     creatWinFun()
   },
   methods: {
+    logout() {
+      websocket.close()
+    },
     clickEvent(e) {
       console.log(e)
     },
@@ -97,13 +100,15 @@ export default {
 
       if (this.myWinId === 1) {
         if (!id) {
-        this.$router.push({ path: '/login' })
+          this.$router.push({ path: '/login' })
           return false
         }
         db.userDB.creatDB(uid)
         db.msgDB.creatUserDB(uid)
         db.msgDB.creatGroupDB(uid)
-        websocket.init()
+        setTimeout(() => {
+          websocket.init()
+        }, 500)
       }
     }
   },

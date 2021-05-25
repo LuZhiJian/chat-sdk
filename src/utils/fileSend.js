@@ -10,7 +10,6 @@ const fileFix = {
       fromUid: this.loginUid,
       msgType: param.fileType
     })
-    // console.log(msg)
     db.msgDB.add(msg)
   },
   progress(param) {
@@ -48,8 +47,10 @@ const fileFix = {
       msgType: msg.msgType,
       content: msg.content,
       flag: msg.flag,
-      fileId: msg.fileId
+      fileId: msg.fileId,
+      url: msg.url
     }
+    db.msgDB.update({...sendData, ...{index: 'flag', state: 1}})
     websocket.send(2, sendData)
   }
 }

@@ -152,6 +152,8 @@
 }
 
 .message-item {
+  margin-top: 30px;
+
   .chat-mini-time {
     display: block;
     font-size: 12px;
@@ -179,6 +181,18 @@
       max-width: 72%;
       margin: 0 15px;
       position: relative;
+
+      &:after {
+        content: '';
+        width: 16px;
+        height: 16px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        position: absolute;
+        bottom: 3px;
+        right: -32px;
+      }
 
       .cancel-btn {
         width: 20px;
@@ -319,6 +333,14 @@
         }
       }
     }
+
+    @for $i from 1 through 5 {
+      &.state-#{$i} {
+        .msg-box:after {
+          background-image: url('../../assets/state-#{$i}.png');
+        }
+      }
+    }
   }
 
   &.me {
@@ -329,6 +351,11 @@
 
       .msg-box {
         float: right;
+
+        &:after {
+          right: auto;
+          left: -32px;
+        }
 
         .cancel-btn {
           right: auto;

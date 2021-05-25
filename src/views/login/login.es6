@@ -14,7 +14,7 @@ export default {
 	methods: {
     login() {
       const param = {
-        code: this.code
+        code: this.code.toUpperCase()
       }
       api.login({ param }).then((res) => {
         this.$store.dispatch('setLoginData', res)

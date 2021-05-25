@@ -1,6 +1,6 @@
 <template>
   <div :class="'u-avatar ' + (+info.uid === 10002 ? 'u-helper' : +info.uid === -10002 ? 'g-notice' : +info.groupId ? 'group' : 'user')" v-if="info && info">
-    <MsgTag v-if="info.tag" :tag="info.tag" :disturb="info.disturb" />
+    <MsgTag v-if="tag" :tag="tag" :disturb="info.disturb" />
     <div class="img-path" :style="{backgroundImage: 'url(' + info.icon + ')'}"></div>
     <online-state v-if="+info.isShowOnline" :status="info.isOnline"></online-state>
   </div>
@@ -18,6 +18,10 @@ export default {
     userInfo: {
       type: Object,
       default: {}
+    },
+    tag: {
+      type: Number,
+      default: 0
     }
   },
   data () {

@@ -1,20 +1,21 @@
 import { createStore } from 'vuex'
 import * as storage from 'utils/storage'
+import db from '../db'
 
 export default createStore({
   state: {
-    loginData: storage.lcGet('login_data'),
+    loginData: storage.ssGet('login_data'),
     notifyData: {},
-    contactsTime: storage.lcGet('contacts_time'),
-    contactsShowUser: storage.lcGet('contacts_show_user'),
-    chattingUser: storage.lcGet('chat_ing_user'),
+    contactsTime: storage.ssGet('contacts_time'),
+    contactsShowUser: storage.ssGet('contacts_show_user'),
+    chattingUser: storage.ssGet('chat_ing_user'),
     dbMessageData: {},
     ossClient: storage.ssGet('ossClient')
   },
   mutations: {
     'setLoginData'(state, info) {
       state.loginData = info
-      storage.lcSet('login_data', info)
+      storage.ssSet('login_data', info)
     },
     'setNotify'(state, obj) {
       state.notifyData = obj
@@ -26,15 +27,15 @@ export default createStore({
     },
     'setContactsTime'(state, timestr) {
       state.contactsTime = timestr
-      storage.lcSet('contacts_time', timestr)
+      storage.ssSet('contacts_time', timestr)
     },
     'setContactsShowUser'(state, user) {
       state.contactsShowUser = user
-      storage.lcSet('contacts_show_user', user)
+      storage.ssSet('contacts_show_user', user)
     },
     'setChatUser'(state, user) {
       state.chattingUser = user
-      storage.lcSet('chat_ing_user', user)
+      storage.ssSet('chat_ing_user', user)
     },
     'setDBMessageData'(state, obj) {
       state.dbMessageData = obj
@@ -42,6 +43,15 @@ export default createStore({
     'setOssClient'(state, info) {
       state.ossClient = info
       storage.ssSet('oss_client', info)
+    },
+    async 'clearData'(state) {
+      state.loginData = null
+      state.contactsShowUser = null
+      state.chattingUser = null
+      state.contactsTime = null
+      sessionStorage.clear()
+      db.userDB.close()
+      db.msgDB.close()
     },
   },
   actions: {
@@ -65,6 +75,9 @@ export default createStore({
     },
     setOssClient({ commit }, data) {
       commit('setOssClient', data)
+    },
+    setClearData({ commit }) {
+      commit('clearData')
     },
   }
   // modules: {

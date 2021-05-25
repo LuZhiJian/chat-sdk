@@ -37,6 +37,11 @@ export default {
 	methods: {
     showCard(user) {
       Win.card(Object.assign(user, {loginId: user.uid}))
+    },
+    logout() {
+      this.$store.dispatch('setClearData')
+      this.$router.push({ path: '/login' })
+      this.$emit('logout')
     }
 	},
   watch: {

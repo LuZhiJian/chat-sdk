@@ -4,10 +4,10 @@ import { Avatar, Editor } from 'components'
 import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, vagueSearchList } from 'utils/common'
 import { remote, ipcRenderer } from 'electron'
 import websocket from 'utils/websocket'
-import Win from 'utils/winOptions'
 import { updateBadge } from '@/winset'
-import db from '@/db'
+import Win from 'utils/winOptions'
 import api from 'utils/api'
+import db from '@/db'
 
 export default {
 	name: 'home',
@@ -22,7 +22,11 @@ export default {
       chattingList: [],
       searchList: [],
       chatMessageList: [],
-      allChatData: {}
+      allChatData: {},
+      msgNum: 0,
+      receiptList: [],
+      receiptKeep: false,
+      receiptAble: true
 		}
 	},
   setup() {
@@ -66,21 +70,51 @@ export default {
       return `${startStr}...${endStr}`
     }
 
+    const timeLine = (curTime, prevTime) => {
+      let show = true
+      if (!curTime) return false
+      const timestamp = (curTime - prevTime)/1000/60
+      if (timestamp >= 5) {
+        show = true
+      } else {
+        show = false
+      }
+      return show
+    }
+
+    const getNum = (msgList, user) => {
+      if (!msgList) return 0
+      let len = 0
+      const list = msgList[user.uid] || []
+      const noreadList = list.filter(o => {
+        return o.read === false
+      })
+      len = noreadList.length
+      return len
+    }
+
     return {
       fileSizeFilter,
       getList,
       initImg,
       initMedia,
       initFileName,
-      decodeEmojiHtml
+      decodeEmojiHtml,
+      timeLine,
+      getNum
     }
   },
 	mounted() {
-    // updateBadge('')
     this.init()
+    remote.getCurrentWindow().on("focus", () => {
+      if (this.chatUser && this.myInfo.uid) {
+        this.receiptMessage()
+      }
+    })
 	},
   unmounted() {
     ipcRenderer.removeAllListeners('chat-to-chat')
+    remote.getCurrentWindow().removeAllListeners('focus')
   },
   updated(){
     // goBottom()
@@ -154,15 +188,83 @@ export default {
       // console.log(msg)
       return msg
     },
-    onChatuserChange(user) {
+    // 逐条处理回执信息
+    catOneMessage() {
+      return new Promise(async resolve => {
+        if (this.receiptList.length) {
+          websocket.send(3, this.receiptList[0])
+          setTimeout(async () => {
+            this.receiptList.splice(0, 1)
+            if (this.receiptList.length) {
+              await this.catOneMessage()
+            } else {
+              this.receiptAble = true
+              this.receiptKeep = false
+            }
+          }, 100)
+          resolve(true)
+        } else {
+          resolve(true)
+        }
+      })
+    },
+    //消息回执
+    async receiptMessage() {
+      if (!this.chatUser) return false
+      if (!this.myInfo.uid) return false
+      const chatId = this.chatUser.uid
+      const loginId = this.myInfo.uid
+      if (!this.allChatData[chatId]) return false
+      this.allChatData[chatId].map(o => {
+        if (o.fromUid !== loginId && o.read === false) {
+          const data = {
+            msgId: o.msgId,
+            targetUid: o.fromUid,
+            msgStatus: 2
+          }
+          o.read = true
+          this.receiptList.push(data)
+        }
+      })
+      this.receiptAble = false
+      if (!this.receiptKeep) {
+        this.receiptKeep = true
+        try {
+          await this.catOneMessage()
+        } catch {
+          this.receiptKeep = false
+        } finally {
+          this.receiptKeep = false
+        }
+      }
+      this.$store.dispatch('setDBMessageData', this.allChatData)
+    },
+    async onChatuserChange(user) {
       if (!user) return false
       this.chatMessageList = this.allChatData[user.uid]
+      const find = this.chattingList.find(o => o.uid === user.uid)
+      if (!find) {
+        this.chattingList = await this.$chatUsersDB.getChattingList()
+      }
+      if (remote.getCurrentWindow().isVisible()) {
+        this.receiptMessage()
+      }
       goBottom()
     },
     onDBMessageChange(msgData) {
+      this.msgNum = 0
+      Object.keys(msgData).forEach((key) => {
+        const oneNum = msgData[key].filter(o => o.read === false)
+        this.msgNum += oneNum.length
+      })
+      updateBadge(this.msgNum)
       this.allChatData = deepClone(msgData)
       if (this.chatUser) {
         this.chatMessageList = this.allChatData[this.chatUser.uid]
+        console.log(this.receiptAble)
+        if (remote.getCurrentWindow().isFocused() && this.receiptAble) {
+          this.receiptMessage()
+        }
         goBottom()
       }
     }

@@ -13,6 +13,10 @@
           </a>
         </li>
       </ul>
+
+      <div class="logout-btn" @click.stop="logout">
+        <svgIcon size="24px" name="logout" color="#EEE" />
+      </div>
     </div>
 	</div>
 </template>

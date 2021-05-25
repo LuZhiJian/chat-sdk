@@ -37,7 +37,7 @@
         <div class="chatting-user-list" v-if="chattingList">
           <div :class="'user-item ' + (chatUser.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chattingList" :key="v.userInfo.uid" @click.stop="chatting(v)">
             <div class="av-box">
-              <Avatar :userInfo="v" />
+              <Avatar :userInfo="v" :tag="getNum(allChatData, v)" />
             </div>
             <div class="txt-box">
               <div class="top-line">
@@ -54,7 +54,7 @@
         </div>
       </div>
     </div>
-    <div class="right-inner">
+    <div class="right-inner" v-show="chatUser.userInfo">
       <div class="chat-head drag">
         <div class="chat-name no-drag" v-if="chatUser.userInfo">{{ chatUser.userInfo.nickName }}<span v-if="chatUser && chatUser.groupCount">({{ chatUser.groupCount }})</span></div>
         <div class="more-info-btn no-drag" v-if="chatUser.uid">
@@ -64,10 +64,10 @@
       <div class="message-main-inner">
         <div class="message-main-scroll" id="message-scroll">
           <div class="message-main-bying">
-            <div :class="'message-item ' + (v.uid !== +myInfo.uid ? 'me':'')" v-for="v in chatMessageList" :key="v.id">
-              <ChatTime :chatTime="v.time" />
-              <div class="msg-line">
-                <Avatar :userInfo="v.uid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
+            <div :class="'message-item ' + (v.toUid !== +myInfo.uid ? 'me':'')" v-for="(v, i) in chatMessageList" :key="v.id">
+              <ChatTime :chatTime="v.time" v-if="i > 0 && timeLine(chatMessageList[i].time, chatMessageList[i-1].time)" />
+              <div :class="`msg-line state-${v.state}`">
+                <Avatar :userInfo="v.toUid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
                 <div class="msg-box" v-if="v.msgType === 1">
                   <div class="msg" v-html="decodeEmojiHtml(v.content.content)"></div>
                 </div>
@@ -76,7 +76,7 @@
                     <svgIcon name="clear" />
                   </div> -->
                   <div class="msg">
-                    <img :src="initImg(v.content.url)">
+                    <img :src="initImg(v.url)">
                   </div>
                 </div>
                 <div class="msg-box file" v-else-if="[3, 4].includes(v.msgType)">

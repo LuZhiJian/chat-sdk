@@ -19,14 +19,17 @@ const getId = () => {
 
 const updateStoreMessage = (obj = {}, type) => {
   const storeData = store.state.dbMessageData
+  const myId = getId()
   const toUid = obj.toUid
-  storeData[toUid] = storeData[toUid] || []
+  const fromUid = obj.fromUid
+  const friendId = obj.friendId || (toUid === myId ? fromUid : toUid)
+  storeData[friendId] = storeData[friendId] || []
   switch (type) {
     case 'add':
-      storeData[toUid].push(obj)
+      storeData[friendId].push(obj)
       break;
     case 'update':
-      storeData[toUid].forEach(o => {
+      storeData[friendId].forEach(o => {
         if ((obj.flag && o.flag === obj.flag) || (obj.msgId && o.msgId === obj.msgId)) {
           const newObj = deepClone(obj)
           o = Object.assign(o, newObj)
@@ -34,10 +37,10 @@ const updateStoreMessage = (obj = {}, type) => {
       })
       break;
     case 'delete':
-      storeData[toUid] = storeData[toUid].filter(o => (obj.flag && o.flag !== obj.flag) || (obj.msgId && o.msgId !== obj.msgId))
+      storeData[friendId] = storeData[friendId].filter(o => (obj.flag && o.flag !== obj.flag) || (obj.msgId && o.msgId !== obj.msgId))
       break;
     case 'set':
-      storeData[toUid] = obj.list
+      storeData[friendId] = obj.list
       break;
 
     default:
@@ -120,7 +123,9 @@ const msgDB = {
     const myId = getId()
     const toUid = msgObj.toUid
     const fromUid = msgObj.fromUid
-    const num = getNum(toUid)
+    const friendId = toUid === myId ? fromUid : toUid
+    console.log(friendId)
+    const num = getNum(friendId)
     const tableName = `table${num}`
     return new Promise(resolve => {
       curDB.transaction('rw', curDB[tableName], () => {
@@ -140,7 +145,9 @@ const msgDB = {
     const curDB = await openDB(isGroup)
     const myId = getId()
     const toUid = msgObj.toUid
-    const num = getNum(toUid)
+    const fromUid = msgObj.fromUid
+    const friendId = msgObj.friendId || (toUid === myId ? fromUid : toUid)
+    const num = getNum(friendId)
     const tableName = `table${num}`
     const key = msgObj.index
     return new Promise(resolve => {
@@ -199,16 +206,17 @@ const msgDB = {
     const myId = getId()
     const toUid = msgObj.toUid
     const fromUid = msgObj.fromUid
+    const friendId = toUid === myId ? fromUid : toUid
 
-    const num = getNum(toUid)
+    const num = getNum(friendId)
     const tableName = `table${num}`
     const key = msgObj.index
     return new Promise(resolve => {
       curDB.transaction('rw', curDB[tableName], async() => {
         curDB[tableName].where(key).equals(msgObj[key]).delete().then(() => {
           updateStoreMessage(msgObj, 'delete')
-          if (msgObj.content.url) {
-            creatfile.deleteOneFile(msgObj.content.url)
+          if (msgObj.url) {
+            creatfile.deleteOneFile(msgObj.url)
           }
           resolve({code: 200})
           // msgObj.content.locPath ? creatfile.deleteOneFile(msgObj.content.locPath) : ''

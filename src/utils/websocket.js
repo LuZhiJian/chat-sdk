@@ -14,7 +14,7 @@ const socket = {
   // 心跳timer
   hearbeat_timer: null,
   // 心跳发送频率
-  hearbeat_interval: 10000,
+  hearbeat_interval: 30000,
   // socket标签
   socket_tag: 0,
   // 是否自动重连
@@ -29,6 +29,9 @@ const socket = {
   reconnect_interval: 10000,
   // 当前连接的socket_url
   current_sw_url: '',
+  // 接受到但为输出的消息列表
+  messageList: [],
+  isKeeping: false,
 
   /**
    * 初始化连接
@@ -40,12 +43,14 @@ const socket = {
     }
 
     // 已经创建过连接不再重复创建
+    console.log(socket)
     if (socket.websock) {
       return socket.websock
     }
     socket.socket_tag++
     const wsuri = `${socket.ws_url}/?sid=${socket.socket_tag}`
     socket.current_sw_url = wsuri
+    console.log(wsuri);
     socket.websock = new WebSocket(wsuri)
     socket.websock.onmessage = (e) => {
       if (socket.current_sw_url !== e.target.url) {
@@ -62,6 +67,7 @@ const socket = {
       console.log('连接已断开')
       console.log('connection closed (' + e.code + ')')
       clearInterval(socket.hearbeat_interval)
+      clearInterval(socket.hearbeat_timer)
       socket.socket_open = false
 
       // 需要重新连接
@@ -123,11 +129,10 @@ const socket = {
       }
 
       // 正在开启状态，则等待1s后重新调用
-    } else if (socket.websock.readyState === socket.websock.CONNECTING) {
-      setTimeout(() => {
-        socket.send(type, data, callback)
-      }, 1000)
-
+    } else if (socket.websock && socket.websock.readyState === socket.websock.OPEN) {
+      // setTimeout(() => {
+      //   socket.send(type, data, callback)
+      // }, 1000)
       // 未开启，则等待1s后重新调用
     } else {
       socket.init()
@@ -137,13 +142,55 @@ const socket = {
     }
   },
 
+  handleMesg() {
+    return new Promise(async resolve => {
+      try {
+        if (socket.messageList.length > 0) {
+          const data = await Cat.receiveFun(socket.messageList[0])
+          if (data) {
+            socket.messageList.splice(0, 1)
+            if (socket.messageList.length) {
+              await socket.handleMesg()
+            } else {
+              socket.isKeeping = false
+            }
+          } else {
+            socket.isKeeping = false
+          }
+          // if (data && mySendType === 0) {}
+          // console.log(data)
+          resolve(data)
+        } else {
+          socket.isKeeping = false
+        }
+      } catch (err) {
+        socket.isKeeping = false
+        resolve(err)
+      }
+    })
+  },
+
   /**
    * 接收消息
    * @param {*} message 接收到的消息
    */
   receive: async (message) => {
-    const smgContent = await Cat.receiveFun(message)
-    // console.log(smgContent);
+    // await Cat.receiveFun(message)
+    if (message instanceof ArrayBuffer || message instanceof Blob) {
+      socket.messageList.push(message)
+      if (!socket.isKeeping) {
+        socket.isKeeping = true
+        try {
+          await socket.handleMesg()
+        } catch {
+          socket.isKeeping = false
+        } finally {
+          socket.isKeeping = false
+        }
+      }
+    } else {
+      // console.log(result)
+    }
   },
 
   /**
@@ -166,8 +213,10 @@ const socket = {
   close: () => {
     console.log('主动断开连接')
     clearInterval(socket.hearbeat_interval)
+    clearInterval(socket.hearbeat_timer)
     socket.is_reonnect = false
     socket.websock.close()
+    socket.websock = null
   },
 
   /**
@@ -175,11 +224,10 @@ const socket = {
    */
   reconnect: () => {
     console.log('发起重新连接', socket.reconnect_current)
-
     if (socket.websock && socket.socket_open) {
       socket.websock.close()
     }
-
+    socket.websock = null
     socket.init()
   },
 }

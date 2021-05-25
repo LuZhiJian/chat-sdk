@@ -8,7 +8,7 @@
 </template>
 <script>
 import { watch, reactive, toRefs } from 'vue'
-import { matchType, resetTime} from 'utils/common'
+import { deepClone, matchType, resetTime} from 'utils/common'
 import lrz from 'lrz'
 import oss from 'utils/oss'
 import creatfile from 'utils/creatFile'
@@ -190,11 +190,15 @@ export default {
 
     async uploadFile(data) {
       const that = this
+      const oldData = deepClone(data)
       that.$emit('uploaddata', Object.assign(data, {ready: false, progress: 0}))
       oss.client(data.fileType, data.file, (gressData) => {
         that.$emit('progress', Object.assign(data, gressData))
       }, res => {
-        that.$emit('uploaded', Object.assign(res, data))
+        const sendData = {...res, ...data}
+        sendData.content.url = res.url
+        sendData.url = oldData.url
+        that.$emit('uploaded', sendData)
       }, err => {
         that.$emit('uploaderr', data)
       })
