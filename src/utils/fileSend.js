@@ -47,6 +47,7 @@ const fileFix = {
       msgType: msg.msgType,
       content: msg.content,
       flag: msg.flag,
+      time: msg.flag,
       fileId: msg.fileId,
       url: msg.url
     }

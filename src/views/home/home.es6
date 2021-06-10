@@ -1,11 +1,13 @@
 import { reactive, toRefs } from 'vue'
 import { ChatTime } from '@/filter'
 import { Avatar, Editor } from 'components'
-import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, vagueSearchList } from 'utils/common'
-import { remote, ipcRenderer } from 'electron'
+import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, parseEmoji, vagueSearchList, checkFileIn, resetTime, inTime } from 'utils/common'
+import loadFile from 'utils/download'
+import { remote, ipcRenderer, clipboard, nativeImage } from 'electron'
 import websocket from 'utils/websocket'
 import { updateBadge } from '@/winset'
 import Win from 'utils/winOptions'
+import md5 from 'js-md5'
 import api from 'utils/api'
 import db from '@/db'
 
@@ -52,7 +54,7 @@ export default {
       return msgList
     }
     const decodeEmojiHtml = (str) => {
-      return parseEmojiShowCode(str)
+      return parseEmoji(str)
     }
     const initImg = (path) => {
       return `file://${path}`
@@ -93,6 +95,11 @@ export default {
       return len
     }
 
+    const updateDetail = async (user) => {
+      await db.userDB.contacts.update(user)
+      await db.userDB.chatUsers.update(user)
+    }
+
     return {
       fileSizeFilter,
       getList,
@@ -101,7 +108,8 @@ export default {
       initFileName,
       decodeEmojiHtml,
       timeLine,
-      getNum
+      getNum,
+      updateDetail
     }
   },
 	mounted() {
@@ -114,6 +122,11 @@ export default {
 	},
   unmounted() {
     ipcRenderer.removeAllListeners('chat-to-chat')
+    ipcRenderer.removeAllListeners('chat-user-del')
+    ipcRenderer.removeAllListeners('msg-copy')
+    ipcRenderer.removeAllListeners('msg-recall')
+    ipcRenderer.removeAllListeners('msg-del')
+    ipcRenderer.removeAllListeners('msg-show-folder')
     remote.getCurrentWindow().removeAllListeners('focus')
   },
   updated(){
@@ -129,6 +142,48 @@ export default {
         const user = await this.$contactsDB.getContactDetail(data.uid) || await api.contactDetail({ param: { targetUid: data.uid } })
         this.chatting(user)
       })
+      ipcRenderer.on('chat-user-del', (event, arg) => {
+        remote.dialog.showMessageBox({
+          title: '提示',
+          message: '确定删除该聊天回话吗？',
+          buttons: ['确定', '取消'],
+          cancelId: 1,
+          noLink: true,
+          defaultId: 0
+        }).then(res => {
+          if (res.response === 0) {
+            this.$chatUsersDB.delete(arg.item).then(async qaq => {
+              if (qaq.code === 200) {
+                await this.$msgDB.deleteUser(arg.item)
+                this.chattingList = await this.$chatUsersDB.getChattingList()
+              }
+            })
+          }
+        })
+      })
+      ipcRenderer.on('msg-copy', (event, arg) => {
+        if (arg.item.msgType === 2 || arg.item.msgType === 5) {
+          let image = nativeImage.createFromPath(arg.item.url || arg.item.thumbURL)
+          clipboard.writeImage(image)
+        } else if (arg.item.msgType === 1) {
+          document.execCommand("Copy")
+        }
+      })
+      ipcRenderer.on('msg-recall', (event, arg) => {
+        const recallMsg = {
+          msgId: arg.item.msgId,
+          targetUid: arg.item.toUid
+        }
+        websocket.send(4, recallMsg)
+      })
+      ipcRenderer.on('msg-del', (event, arg) => {
+        const msg = deepClone(arg.item)
+        msg.index = msg.msgId ? 'msgId' : 'flag'
+        db.msgDB.delete(msg)
+      })
+      ipcRenderer.on('msg-show-folder', (event, arg) => {
+        this.openFile(arg.item)
+      })
     },
     showCard(uid) {
       const user = uid !== +this.myInfo.uid ? this.myInfo : (this.chatUser && this.chatUser.userInfo)
@@ -143,8 +198,24 @@ export default {
       this.chatSearchValue = ''
       this.$refs.search.focus()
     },
-    chatting(item) {
-      this.$store.dispatch('setChatUser', item)
+    async chatting(item) {
+      let detail = deepClone(item)
+      if (this.$refs.editor) {
+        this.$refs.editor.clearInput()
+        this.$refs.editor.getFocus()
+      }
+      if (inTime(item.getApiTime) >= 2) {
+        detail.userInfo = (await api.contactDetail({ param: { targetUid: item.uid } })).userInfo
+        detail.getApiTime = new Date().getTime()
+        this.chattingList.map(o => {
+          if (o.uid === item.uid) {
+            o.userInfo = detail.userInfo
+            o.getApiTime = detail.getApiTime
+          }
+        })
+        this.updateDetail(detail)
+      }
+      this.$store.dispatch('setChatUser', detail)
     },
     send(data) {
       const sign = new Date().getTime()
@@ -158,13 +229,94 @@ export default {
     cancelUpload(msg) {
       this.$refs.editor.cancelUpload(msg)
     },
-    openFile(item) {
-      if (item.progress !== 100) return false
-      remote.shell.showItemInFolder(item.content.url)
+    async openFile(item) {
+      if (item.progress && item.progress !== 100) return false
+      const check = await checkFileIn(item.url)
+      if (check) {
+        remote.shell.showItemInFolder(item.url)
+      } else {
+        this.$notify.open('error', '文件状态异常，无法打开。')
+      }
+    },
+    //下载文件
+    async downloadFile(msg, isDownload) {
+      const that = this
+      const item = deepClone(msg)
+      if (item.progress && item.progress < 100) {
+        item.fileUrl = ''
+        this.cancelUpload(item)
+        return false
+      } else if (item.url) {
+        const isPic = [2, 6].includes(item.msgType)
+        if (isPic) return false
+        this.openFile(item)
+        return false
+      } else {
+        const chatMssList = deepClone(this.allChatData[item.uid])
+        const suffix = item.msgType === 2 ? 'png' : 'gif'
+        // 下载中的时候防止再次执行下载
+        if (item.loadsize && item.loadsize < item.content.fileSize) {
+          loadFile(false, () => {
+            const find = chatMssList.find(o => o.msgId === item.msgId)
+            find.loadsize = 0
+            find.url = ''
+            find.percent = 0
+            find.index = 'msgId'
+            db.msgDB.update(find)
+          })
+        } else {
+          loadFile(Object.assign(item, {
+            download: true,
+            chatUid: item.uid,
+            type: item.msgType,
+            fileUrl: item.content.url,
+            size: item.content.fileSize,
+            name: `${md5(item.content.url)}.${suffix}`,
+            msgId: item.msgId
+          }), (data) => {
+            const find = chatMssList.find(o => o.msgId === item.msgId)
+            if (data.locUrl.length > 0 && isDownload) {
+              remote.getCurrentWebContents().downloadURL(data.locUrl)
+            }
+            find.loadsize = Number(data.loadsize)
+            find.url = data.locUrl
+            find.percent = Number(data.percent)
+            find.index = 'msgId'
+            db.msgDB.update(find)
+          })
+        }
+      }
+    },
+    showChatuserRtKey(event, e, item) {
+      const data = deepClone({
+        type: 'chat-user',
+        item
+      })
+      ipcRenderer.send(e, data)
+    },
+    async showChatRclickList(event, e, item) {
+      let check = true
+      if ([2, 3, 4, 6, 7].includes(item.msgType)) {
+        check = item.url ? await checkFileIn(item.url) : false
+      }
+      const data = deepClone({
+        type: 'msg',
+        item,
+        loginId: this.myInfo.uid,
+        fileCheck: check,
+        ddTime: (new Date().getTime() - item.time)/(1000 * 60)
+      })
+      ipcRenderer.send(e, data)
     },
     // 更新回话列表用户的显示消息
     lastMsg(list, id) {
       if (!list || list.length) return ''
+      // 草稿
+      const txtObj = this.$store.state.readyText
+      const readyTxt = this.chatUser.uid === id ? '' : txtObj[id]
+      if (readyTxt) {
+        return `<span>[草稿]</span>${readyTxt}`
+      }
       const obj = list[id] && list[id][list[id].length - 1]
       let msg = ''
       if (!obj) return ''
@@ -173,10 +325,13 @@ export default {
           msg = obj.content.content
           break;
         case 2:
-          msg = obj.suffix === 'gif' ? '[动图]' : '[图片]'
+          msg = '[图片]'
           break;
         case 3:
         case 4:
+        case 6:
+          msg = '[动态表情]'
+          break;
         case 7:
           msg = `[文件]${obj.key}`
           break;
@@ -211,7 +366,7 @@ export default {
     //消息回执
     async receiptMessage() {
       if (!this.chatUser) return false
-      if (!this.myInfo.uid) return false
+      if (!this.myInfo || !this.myInfo.uid) return false
       const chatId = this.chatUser.uid
       const loginId = this.myInfo.uid
       if (!this.allChatData[chatId]) return false
@@ -261,7 +416,6 @@ export default {
       this.allChatData = deepClone(msgData)
       if (this.chatUser) {
         this.chatMessageList = this.allChatData[this.chatUser.uid]
-        console.log(this.receiptAble)
         if (remote.getCurrentWindow().isFocused() && this.receiptAble) {
           this.receiptMessage()
         }

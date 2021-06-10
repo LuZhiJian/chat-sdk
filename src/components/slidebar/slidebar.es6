@@ -8,6 +8,10 @@ export default {
     data: {
       type: Object,
       default: {}
+    },
+    friendNum: {
+      type: Number,
+      default: 0
     }
   },
 	data () {
@@ -42,11 +46,28 @@ export default {
       this.$store.dispatch('setClearData')
       this.$router.push({ path: '/login' })
       this.$emit('logout')
+    },
+    onFriendNumChange(num) {
+      if (!this.pages.length) return
+      if (this.routeName === 'List') {
+        this.$store.dispatch('setNewFriendNum', 0)
+        this.pages[1].tag = 0
+      } else {
+        this.pages[1].tag = num
+      }
     }
 	},
   watch: {
     $route(to, from) {
-      this.routeName = to.name;
+      this.routeName = to.name
+      if (this.routeName === 'List') {
+        this.$store.dispatch('setNewFriendNum', 0)
+      }
+    },
+    friendNum: {
+      handler: 'onFriendNumChange',
+      immediate: true,
+      deep: true
     }
   },
   computed: {

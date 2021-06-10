@@ -1,5 +1,6 @@
 import constant from 'utils/constant'
 import store from '@/store'
+import creatFile from './creatFile'
 
 import emojiJson from 'components/emojiFace/emoji.json'
 import iconTxt from 'assets/filetype/icon-txt.png'
@@ -14,6 +15,7 @@ import iconXls from 'assets/filetype/icon-xls.png'
 import iconZip from 'assets/filetype/icon-zip.png'
 import iconRar from 'assets/filetype/icon-rar.png'
 import iconUnknown from 'assets/filetype/icon-unknown.png'
+import SWorker from 'worker-loader!./worker.js'
 
 const escapeRegExp = str => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, '\\$1')
 
@@ -188,7 +190,7 @@ export const resetTime = (time) => {
 export const goBottom = () => {
   setTimeout(() => {
     let ele = document.getElementById('message-scroll')
-    ele.scrollTop = ele.scrollHeight
+    ele.scrollTop = ele && ele.scrollHeight
   }, 10)
 }
 
@@ -280,7 +282,6 @@ export const matchType = fileName => {
     case 'tif':
     case 'tiff':
     case 'yuv':
-    case 'gif':
       type = 2
       icon = iconImg
       break;
@@ -315,6 +316,10 @@ export const matchType = fileName => {
     case 'm4v':
       type = 4
       icon = iconVideo
+      break;
+    case 'gif':
+      type = 6
+      icon = iconImg
       break;
     case 'doc':
     case 'docx':
@@ -421,9 +426,52 @@ export const checkFile = file => {
   })
 }
 
+export const checkFileIn = async (url) => {
+  const isIn = await creatFile.checkFileIn(url)
+  return isIn
+}
+
 export const intervalTime = (time) => {
   const timestamp = new Date().getTime()
   const date = (timestamp - time).toFixed(0)
   const days = Math.floor(date / (24 * 3600 * 1000))
   return days
+}
+
+export const inTime = (getApiTime) => {
+  const nowTiming = new Date().getTime()
+  const csTime = Math.abs(nowTiming - (getApiTime || 0))/1000/60
+  return csTime
+}
+
+export const FileAesBuffer = (arraybuf, size, filename) => {
+  return new Promise(resolve => {
+    let worker = new SWorker()
+    worker.postMessage({arraybuf, size, isDaes: false})
+    worker.onmessage = e => {
+      worker.terminate()
+      resolve(e.data)
+    }
+    worker.onerror = e => {
+      console.log('webwork error')
+    }
+  })
+}
+
+export const FileDaesBuffer = (arraybuf, size, filename, chatUid) => {
+  return new Promise(resolve => {
+    let worker = new SWorker()
+    worker.postMessage({arraybuf, filename, size, isDaes: true, chatUid})
+    worker.onmessage = e => {
+      worker.terminate()
+      creatFile.creatDAESfile(new Uint8Array(e.data.arraybuffer), e.data.filename, e.data.chatUid, (file) => {
+        resolve({
+          filePath: file
+        })
+      })
+    }
+    worker.onerror = e => {
+      console.log('webwork error')
+    }
+  })
 }

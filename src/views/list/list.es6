@@ -47,6 +47,14 @@ export default {
   mounted() {
     this.getList()
     this.getApplyList()
+    ipcRenderer.on('new-user-del', async (event, arg) => {
+      this.apply(3, arg.item)
+      await this.$newUsersDB.delete(arg.item)
+      this.getApplyList()
+    })
+  },
+  unmounted() {
+    ipcRenderer.removeAllListeners('new-user-del')
   },
   methods: {
     clear() {
@@ -57,47 +65,19 @@ export default {
       const str = this.searchValue
       this.searchList = vagueSearchList(this.list, str)
     },
-    getList() {
-      const param = Object.assign({
-        time: this.getListTimeStr || new Date().getTime()
-      }, this.pageQuery)
-      api.contactList({
-        param
-      }).then(async (res) => {
-        if (res.contactList) {
-          res.contactList.map(o => o.uid = o.userInfo.uid)
-          this.$store.dispatch('setContactsTime', res.lastUpdateTime)
-          this.list = res.contactList
-          this.contactCount = res.count
-          await this.$contactsDB.saveContacts(res.contactList)
-        } else {
-          this.list = await this.$contactsDB.getContacts()
-          this.contactCount = this.list.length
-        }
-      }).catch(async () => {
-        this.list = await this.$contactsDB.getContacts()
-        this.contactCount = this.list.length
-      })
+    async getList() {
+      this.list = await this.$contactsDB.getContacts()
+      this.contactCount = this.list.length
     },
-    getApplyList() {
-      api.contactApplyList().then(res => {
-        const unRecordList = deepClone(res.unRecordList || [])
-        const recordList = deepClone(res.recordList || [])
-        unRecordList.map(o => {
-          o.status = intervalTime(o.modifyTime) >= 7 ? 3 : 1 // 等待验证
-          o.uid = o.userInfo.uid
-        })
-        recordList.map(o => {
-          o.status = 2 // 已操作
-          o.uid = o.userInfo.uid
-        })
-        const all = [...unRecordList, ...recordList]
-        all.sort((a, b) => {
-          return b.modifyTime - a.modifyTime
-        })
-        this.applyList = all
-        console.log(this.applyList)
+    async getApplyList() {
+      this.applyList = await this.$newUsersDB.getNewUsersList()
+    },
+    rightClick(event, e, item) {
+      const data = deepClone({
+        type: 'new-user',
+        item
       })
+      ipcRenderer.send(e, data)
     },
     showing(user) {
       this.$store.dispatch('setContactsShowUser', user)
@@ -105,15 +85,16 @@ export default {
     showAvatar(user) {
       const winData = Win.avatar(user)
     },
-    apply(op) {
+    async apply(op, user) {
       const param = {
-        targetUid: this.showUser.userInfo.uid,
+        targetUid: user.uid,
         op: op
       }
-      api.updateApply({ param }).then(res => {
-        const newUser = op === 3 ? null : deepClone(this.showUser)
+      api.updateApply({ param }).then(async res => {
+        const newUser = op === 3 ? null : deepClone(user)
         if (newUser) {
           newUser.status = 2
+          await this.$newUsersDB.update(newUser)
         }
         this.showing(newUser)
         this.getApplyList()
@@ -130,15 +111,27 @@ export default {
           path: '/'
         })
       }, 100)
+    },
+    onFriendNumChange(val) {
+      this.getApplyList()
     }
   },
-  watch: {},
+  watch: {
+    friendNum: {
+      handler: 'onFriendNumChange',
+      immediate: true,
+      deep: true
+    }
+  },
   computed: {
     getListTimeStr() {
       return this.$store.state.contactsTime
     },
     showUser() {
       return deepClone(this.$store.state.contactsShowUser)
+    },
+    friendNum() {
+      return +this.$store.state.newFriendNum
     }
   }
 }

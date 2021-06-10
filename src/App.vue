@@ -4,7 +4,7 @@
       <WinBtnLine />
     </div>
     <div class="page-slide drag" v-if="loginSessionId && +this.myWinId === 1">
-      <SlideBar :data="myInfo" @logout="logout" />
+      <SlideBar :data="myInfo" @logout="logout" :friendNum="friendNum" />
     </div>
     <router-view/>
     <Notify />
@@ -47,10 +47,12 @@
 import { WinBtnLine, SlideBar, Notify } from 'components'
 import packageJson from '../package.json'
 import os from 'os'
+import api from 'utils/api'
 import websocket from 'utils/websocket'
 import { remote } from 'electron'
 import Win from 'utils/winOptions'
 import db from '@/db'
+import { deepClone, intervalTime } from 'utils/common'
 
 const creatWinFun = () => {
   Object.keys(Win).forEach(fun => {
@@ -63,7 +65,11 @@ export default {
     return {
       sysForWin: os.type() === 'Windows_NT' ? true : false,//系统判断
       myWinId: 0,
-      myInfo: {}
+      myInfo: {},
+      pageQuery: {
+        pageNum: 1,
+        pageSize: 10000
+      }
     }
   },
   components: {
@@ -93,6 +99,40 @@ export default {
     clickEvent(e) {
       console.log(e)
     },
+    initContactList() {
+      const getListTimeStr = this.$store.state.contactsTime
+      const param = Object.assign({
+        time: getListTimeStr || new Date().getTime()
+      }, this.pageQuery)
+      api.contactList({
+        param
+      }).then(async (res) => {
+        if (res.contactList) {
+          res.contactList.map(o => o.uid = o.userInfo.uid)
+          this.$store.dispatch('setContactsTime', res.lastUpdateTime)
+          await this.$contactsDB.saveContacts(res.contactList)
+        }
+      })
+    },
+    initApplyList() {
+      api.contactApplyList().then(async res => {
+        const unRecordList = deepClone(res.unRecordList || [])
+        const recordList = deepClone(res.recordList || [])
+        unRecordList.map(o => {
+          o.status = intervalTime(o.modifyTime) >= 7 ? 3 : 1 // 等待验证
+          o.uid = o.userInfo.uid
+        })
+        recordList.map(o => {
+          o.status = 2 // 已操作
+          o.uid = o.userInfo.uid
+        })
+        const all = [...unRecordList, ...recordList]
+        all.sort((a, b) => {
+          return b.modifyTime - a.modifyTime
+        })
+        await this.$newUsersDB.saveNewUsers(all)
+      })
+    },
     onLoginChange(id) {
       const loginData = this.$store.state.loginData || {}
       const uid = loginData.userInfo && loginData.userInfo.uid
@@ -108,6 +148,8 @@ export default {
         db.msgDB.creatGroupDB(uid)
         setTimeout(() => {
           websocket.init()
+          this.initContactList()
+          this.initApplyList()
         }, 500)
       }
     }
@@ -124,6 +166,9 @@ export default {
       const loginData = this.$store.state.loginData
       this.myInfo = (loginData && loginData.userInfo) || {}
       return loginData && loginData.sessionId
+    },
+    friendNum() {
+      return +this.$store.state.newFriendNum
     }
   }
 }

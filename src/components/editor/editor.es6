@@ -2,7 +2,7 @@ import { ref, computed, watch, reactive, toRefs } from 'vue'
 import EmojiFace from 'components/emojiFace'
 import RangeUtil from 'components/emojiFace/rangeUtil'
 import UploadFile from 'components/common/UploadFile.vue'
-import { getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
+import { deepClone, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
 import fileFix from 'utils/fileSend'
 
 export default {
@@ -85,6 +85,7 @@ export default {
           RangeUtil.replaceSelection(img)
           $input.focus()
           this.trueContent = $input.innerHTML.replace(/(^\s*)|(\s*$)/g, "")
+          this.setInputReadyTxt(decodeEmoji(this.trueContent))
         } catch (e) {
           /* eslint-disable no-console */
           console.error(e)
@@ -115,6 +116,11 @@ export default {
       //加入光标的选区
       sel.addRange(range)
     },
+    getFocus() {
+      this.$nextTick(() => {
+        this.$refs.textarea.focus()
+      })
+    },
     hasFocus() {
       return document.activeElement === this.$refs.textarea
     },
@@ -126,14 +132,18 @@ export default {
     faceClickHandle() {
       this.emoji = !this.emoji
     },
+    setInputReadyTxt(val) {
+      // 存入草稿
+      if (!this.chatUser) return
+      const txtObj = this.$store.state.readyText
+      const user = this.chatUser
+      txtObj[user.uid] = val
+      this.$store.dispatch('setReadyTextObj', txtObj)
+    },
     inputHandle(event) {
       const value = event.target.innerHTML
       this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
-      // this.curContent = this.trueContent
-      // console.log(this.$refs.textarea)
-      // this.$nextTick(() => {
-      //   keepLastIndex(this.$refs.textarea)
-      // })
+      this.setInputReadyTxt(decodeEmoji(value))
     },
     async dragHandle(e) {
       // console.log(e)
@@ -169,6 +179,7 @@ export default {
           const $input = this.$refs.textarea
           this.pasteHtmlAtCaret(str)
           const value = decodeEmoji($input.innerHTML)
+          this.setInputReadyTxt(value)
           this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
         })
       }
@@ -224,6 +235,11 @@ export default {
       return false
     },
 
+    setReadyTextToInput(text) {
+      if (!text) return false
+      this.pasteHtmlAtCaret(text)
+    },
+
     ctrlOrMetaEnter() {
       this.textareaRange()
     },
@@ -231,5 +247,23 @@ export default {
       this.$refs.uploaders.cancelUp(msg.fileId, msg.uploadId)
       this.uploadCancel(msg)
     },
-	}
+    onChatUserChange(user) {
+      if (!user) return false
+      const txtObj = deepClone(this.$store.state.readyText)
+      const text = txtObj[user.uid]
+      this.setReadyTextToInput(text)
+    }
+	},
+  watch: {
+    chatUser: {
+      handler: 'onChatUserChange',
+      immediate: true,
+      deep: true
+    }
+  },
+  computed: {
+    chatUser() {
+      return deepClone(this.$store.state.chattingUser)
+    }
+  }
 }

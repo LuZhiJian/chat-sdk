@@ -14,10 +14,11 @@
   "main": "background.js",
   "dependencies": {
     "ali-oss": "^6.15.2",
+    "arraybuffer-concat": "^0.0.1",
     "axios": "^0.21.1",
     "babel-loader": "^8.2.2",
     "core-js": "^3.6.5",
-    "crypto-js": "^4.0.0",
+    "crypto-js": "3.3.0",
     "dayjs": "^1.10.4",
     "dexie": "^3.0.3",
     "electron-windows-badge": "^1.1.0",
@@ -30,7 +31,8 @@
     "svg-sprite-loader": "^6.0.2",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0-0",
-    "vuex": "^4.0.0-0"
+    "vuex": "^4.0.0-0",
+    "worker-loader": "^3.0.8"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",

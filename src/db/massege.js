@@ -164,20 +164,21 @@ const msgDB = {
     })
   },
 
-  async deleteUser(userObj) {
-    const isGroup = userObj.groupId || userObj.groupid
+  async deleteUser(user) {
+    const isGroup = user.groupId
     const curDB = await openDB(isGroup)
-    const friendId = isGroup ? isGroup : userObj.uid
+    const myId = getId()
+    const friendId = user.uid
     const num = getNum(friendId)
     const tableName = `table${num}`
+
     return new Promise(resolve => {
       curDB.transaction('rw', curDB[tableName], async() => {
-        curDB[tableName].where('userid').equals(friendId).each((item => {
-          item.content.url ? creatfile.deleteOneFile(item.content.url) : ''
-          item.content.locPath ? creatfile.deleteOneFile(item.content.locPath) : ''
-          item.content.thumbUrl ? creatfile.deleteOneFile(item.content.thumbUrl) : ''
+        curDB[tableName].where('uid').equals(friendId).each((item => {
+          item.url ? creatfile.deleteOneFile(item.url) : ''
+          item.thumbURL ? creatfile.deleteOneFile(item.thumbURL) : ''
         }))
-        curDB[tableName].where('userid').equals(friendId).delete().then(() => {
+        curDB[tableName].where('uid').equals(friendId).delete().then(() => {
           resolve({code: 200})
         })
       })
@@ -201,12 +202,12 @@ const msgDB = {
     })
   },
   async delete(msgObj) {
-    const isGroup = msgObj.groupId || msgObj.groupid
+    const isGroup = msgObj.groupId
     const curDB = await openDB(isGroup)
     const myId = getId()
     const toUid = msgObj.toUid
     const fromUid = msgObj.fromUid
-    const friendId = toUid === myId ? fromUid : toUid
+    const friendId =  msgObj.friendId || (toUid === myId ? fromUid : toUid)
 
     const num = getNum(friendId)
     const tableName = `table${num}`
@@ -219,8 +220,8 @@ const msgDB = {
             creatfile.deleteOneFile(msgObj.url)
           }
           resolve({code: 200})
-          // msgObj.content.locPath ? creatfile.deleteOneFile(msgObj.content.locPath) : ''
-          // msgObj.content.thumbUrl ? creatfile.deleteOneFile(msgObj.content.thumbUrl) : ''
+          msgObj.url ? creatfile.deleteOneFile(msgObj.url) : ''
+          msgObj.thumbURL ? creatfile.deleteOneFile(msgObj.thumbURL) : ''
         }).catch(() => {
           resolve({code: -1, msg: '更新失败'})
         })

@@ -8,9 +8,10 @@
 </template>
 <script>
 import { watch, reactive, toRefs } from 'vue'
-import { deepClone, matchType, resetTime} from 'utils/common'
+import { deepClone, matchType, resetTime, FileAesBuffer, FileDaesBuffer } from 'utils/common'
 import lrz from 'lrz'
 import oss from 'utils/oss'
+import md5 from 'js-md5'
 import creatfile from 'utils/creatFile'
 
 // 图片按压缩
@@ -47,6 +48,40 @@ const lrzImg = (file) => {
             width: upWidth,
             height: upHeight,
             quality: 0.9
+          }
+          lrz(file, option).then(rst => {
+            //成功时执行
+            resolve(rst)
+          }).catch(error => {
+            resolve(file)
+            //失败时执行
+          })
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (err) {
+      resolve(file)
+      console.log("err:", err);
+    }
+  })
+}
+
+    // 缩略图图片
+const lrzThumbImg = (file) => {
+  return new Promise(resolve => {
+    try {
+      const img = new Image
+      var reader = new FileReader()
+      reader.onloadend = () => {
+        img.src = reader.result
+        img.onload = (data) => {
+          let upWidth = Math.min(img.width, 240)
+          let upHeight = Math.min(img.height, 240)
+
+          const option = {
+            width: upWidth,
+            height: upHeight,
+            quality: 0.8
           }
           lrz(file, option).then(rst => {
             //成功时执行
@@ -136,33 +171,74 @@ export default {
       reader.readAsDataURL(file)
     },
 
+    toAesFile(file, fileInfo) {
+      return new Promise((resolve, reject) => {
+        try {
+          var reader = new FileReader()
+          reader.readAsArrayBuffer(file) //转化二进制流，异步方法
+          reader.onload = async (e) => {
+            const arraybuf = reader.result
+            const splitSize = 100 * 1024
+            const filename = `${md5(new Date().getTime().toString())}.${fileInfo.suffix}`
+            const aesBuffer = await FileAesBuffer(arraybuf, splitSize, filename)
+            resolve(aesBuffer)
+          }
+        } catch (err) {
+          reject(err)
+          console.log("err:", err);
+        }
+      })
+    },
+
+    makeThumimg (file, filedata) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const thumImg = await lrzThumbImg(file)
+          let aesThumImg = await this.toAesFile(thumImg.file, filedata)
+          var newblob = aesThumImg.uploadBlob
+          //调用
+          oss.client(filedata.type, newblob, file.size, ()=>{}, res => {
+            resolve(res)
+          }, (err)=>{
+            console.log(err)
+          })
+        } catch (err) {
+          reject(err)
+          console.log("err:", err);
+        }
+      })
+    },
+
     async uploadingFun(file) {
       if (!this.validate(file)) return false
       const filedata = matchType(file.name)
+      const optFile = filedata.type === 2 ? (await lrzImg(file)).file : file
       // 清除file的文本框的文件信息清除
       const $input = document.getElementById('upload-input')
       $input.value = ''
-      // const optFile = filedata.type === 1 ? (await lrzImg(file)).file : file
-      const tampId = resetTime(new Date().getTime()) // 时间戳
+      const aesFileData = await this.toAesFile(optFile, filedata)
+      const thumimgdata = filedata.type === 2 ? await this.makeThumimg(file, filedata) : null
+      const newblob = aesFileData.uploadBlob
       this.getImgToBase64(filedata, file, async (dataUrl, newFile) => {
         const filePath = await creatfile.imFile(file, this.chatUid)
-        let data = [2, 4].includes(filedata.type) ? {
-          file: file,
+        let data = [2, 4, 5].includes(filedata.type) ? {
+          file: newblob,
           key: file.name,
           fileType: filedata.type,
           suffix: filedata.suffix,
           icon: filedata.icon,
+          size: file.size,
           url: filePath,
           content: {
             width: newFile.width,
             height: newFile.height,
             fileSize: file.size,
             url: filePath,
-            thumbUrl: ''
+            thumbURL: filedata.type === 2 ? thumimgdata.url : ''
           },
           uid: this.chatUid
         } : {
-          file: file,
+          file: newblob,
           key: file.name,
           fileType: filedata.type,
           suffix: filedata.suffix,
@@ -192,7 +268,7 @@ export default {
       const that = this
       const oldData = deepClone(data)
       that.$emit('uploaddata', Object.assign(data, {ready: false, progress: 0}))
-      oss.client(data.fileType, data.file, (gressData) => {
+      oss.client(data.fileType, data.file, data.size, (gressData) => {
         that.$emit('progress', Object.assign(data, gressData))
       }, res => {
         const sendData = {...res, ...data}

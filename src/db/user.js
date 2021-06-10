@@ -1,12 +1,13 @@
 import Dexie from 'dexie'
 import store from '../store'
 
-const version = 1
+const version = 2
 let mydb = null
 
 const mytables = {
   chatusers: 'uid',
-  contacts: 'uid'
+  contacts: 'uid',
+  newusers: 'uid'
 }
 
 const updateVerDB = (tableName, db) => {
@@ -76,6 +77,19 @@ const userDB = {
         })
       })
     },
+    async update(user) {
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.contacts, async() => {
+          const result = await mydb.contacts.put(user)
+          if (result) {
+            resolve({code: 200})
+          } else {
+            resolve({code: -1, msg: '更新失败'})
+          }
+        })
+      })
+    },
     // 保存通讯录联系人列表
     async saveContacts(list) {
       mydb = mydb ? mydb : await openDB()
@@ -84,7 +98,7 @@ const userDB = {
       })
       return new Promise(resolve => {
         mydb.transaction('rw', mydb.contacts, () => {
-          mydb.contacts.bulkAdd(list).then(() => {
+          mydb.contacts.bulkPut(list).then(() => {
             console.log('新增成功')
             resolve({code: 200})
           }).catch(function (e) {
@@ -113,7 +127,7 @@ const userDB = {
     }
   },
   chatUsers: {
-    async addChatUser(user) { //新增会话
+    async addChatUser(user) { // 新增会话
       mydb = mydb ? mydb : await openDB()
       return new Promise(resolve => {
         const newItem = Object.assign(user, {
@@ -129,6 +143,35 @@ const userDB = {
         })
       })
     },
+    async update(user) {
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.chatusers, async() => {
+          const result = await mydb.chatusers.put(user)
+          if (result) {
+            resolve({code: 200})
+          } else {
+            resolve({code: -1, msg: '更新失败'})
+          }
+        })
+      })
+    },
+    async delete(user) { //删除会话
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.chatusers, async() => {
+          mydb.chatusers.where('uid').equals(user.uid).delete().then(() => {
+            const chatUser = store.state.chattingUser
+            if (chatUser && chatUser.uid === user.uid) {
+              store.dispatch('setChatUser', null)
+            }
+            resolve({code: 200})
+          }).catch(() => {
+            resolve({code: -1, msg: '数据删除失败'})
+          })
+        })
+      })
+    },
     async getChattingList() { //获取会话列表
       mydb = mydb ? mydb : await openDB()
       return new Promise(async resolve => {
@@ -137,6 +180,64 @@ const userDB = {
           return b.time - a.time
         }).sort((a, b) => {
           return (a.bfTop ? 1 : 0) - (b.bfTop ? 1 : 0)
+        })
+        resolve(list)
+      })
+    },
+  },
+
+  newUsers: {
+    async delete(user) { //通讯录信息
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.newusers, async() => {
+          mydb.newusers.where('uid').equals(user.uid).delete().then(() => {
+            const showUser = store.state.contactsShowUser
+            if (showUser && showUser.uid === user.uid) {
+              store.dispatch('setContactsShowUser', null)
+            }
+            resolve({code: 200})
+          }).catch(() => {
+            resolve({code: -1, msg: '数据删除失败'})
+          })
+        })
+      })
+    },
+    async update(user) {
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.newusers, async() => {
+          const result = await mydb.newusers.put(user)
+          if (result) {
+            resolve({code: 200})
+          } else {
+            resolve({code: -1, msg: '更新失败'})
+          }
+        })
+      })
+    },
+    // 保存通讯录联系人列表
+    async saveNewUsers(list) {
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(resolve => {
+        mydb.transaction('rw', mydb.newusers, () => {
+          mydb.newusers.bulkPut(list).then(() => {
+            console.log('新的朋友列表保存成功')
+            resolve({code: 200})
+          }).catch((e) => {
+            console.log('保存失败')
+            resolve({code: -1, msg: '插入失败'})
+          })
+        })
+      })
+    },
+
+    async getNewUsersList() { //获取会话列表
+      mydb = mydb ? mydb : await openDB()
+      return new Promise(async resolve => {
+        const data = await mydb.newusers.limit(600).toArray()
+        const list = data.sort((a, b) => {
+          return b.time - a.time
         })
         console.log(list)
         resolve(list)

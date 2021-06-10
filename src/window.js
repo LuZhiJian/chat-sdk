@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, MenuItem, Tray, nativeImage, screen } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import path from 'path'
 import Badge from 'electron-windows-badge'
@@ -362,7 +362,7 @@ export class Window {
       }
     })
 
-    // 创建窗口
+    // 更新信息数量标签
     ipcMain.on('update-all-badge', (event, args) => {
       this.setBadge(args)
     })
@@ -375,6 +375,59 @@ export class Window {
     // 卡片聊天按钮
     ipcMain.on('chat-to-chat', (event, args) => {
       this.main.webContents.send('chat-to-chat', args)
+    })
+
+    //右键列表
+    ipcMain.on("right-click-menu", (event, arg) => {
+      let menu = new Menu()
+      console.log(arg)
+      if (arg.type === 'msg') {
+        if ([1].includes(arg.item.msgType)) {
+          menu.append(new MenuItem({
+            label: '复制',
+            click: () => {
+              this.main.webContents.send('msg-copy', arg)
+            }
+          }))
+        }
+        if (arg.ddTime < 2 && arg.item.fromUid === arg.loginId) {
+          menu.append(new MenuItem({
+            label: '撤回',
+            click: () => {
+              this.main.webContents.send('msg-recall', arg)
+            }
+          }))
+        }
+        menu.append(new MenuItem({
+          label: '删除',
+          click: () => {
+            this.main.webContents.send('msg-del', arg)
+          }
+        }))
+        if ([2,3,4,6,7].includes(arg.item.msgType)) {
+          menu.append(new MenuItem({
+            label: '在文件夹中显示',
+            click: () => {
+              this.main.webContents.send('msg-show-folder', arg)
+            }
+          }))
+        }
+      } else if (arg.type === 'chat-user') {
+        menu.append(new MenuItem({
+          label: '删除',
+          click: () => {
+            this.main.webContents.send('chat-user-del', arg)
+          }
+        }))
+      } else if (arg.type === 'new-user') {
+        menu.append(new MenuItem({
+          label: '删除',
+          click: () => {
+            this.main.webContents.send('new-user-del', arg)
+          }
+        }))
+      }
+      menu.popup(this.main)
     })
   }
 }

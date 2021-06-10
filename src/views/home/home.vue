@@ -34,10 +34,10 @@
       </div>
       <!-- 聊天列表 -->
       <div v-else>
-        <div class="chatting-user-list" v-if="chattingList">
-          <div :class="'user-item ' + (chatUser.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chattingList" :key="v.userInfo.uid" @click.stop="chatting(v)">
+        <div class="chatting-user-list" v-if="chattingList.length">
+          <div :class="'user-item ' + (chatUser.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chattingList" :key="v.userInfo.uid" @click.stop="chatting(v)" @contextmenu.prevent="showChatuserRtKey($event, 'right-click-menu', v)">
             <div class="av-box">
-              <Avatar :userInfo="v" :tag="getNum(allChatData, v)" />
+              <Avatar :userInfo="v" :tag="getNum(chatMessageList, v)" />
             </div>
             <div class="txt-box">
               <div class="top-line">
@@ -66,20 +66,29 @@
           <div class="message-main-bying">
             <div :class="'message-item ' + (v.toUid !== +myInfo.uid ? 'me':'')" v-for="(v, i) in chatMessageList" :key="v.id">
               <ChatTime :chatTime="v.time" v-if="i > 0 && timeLine(chatMessageList[i].time, chatMessageList[i-1].time)" />
-              <div :class="`msg-line state-${v.state}`">
+              <div class="recall-txt" v-if="v.isRecall">{{ (v.toUid !== +myInfo.uid ? '你' : '对方') + '撤回了一条消息' }}</div>
+              <div :class="`msg-line state-${v.state}`" v-else>
                 <Avatar :userInfo="v.toUid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
-                <div class="msg-box" v-if="v.msgType === 1">
+                <div class="msg-box" v-if="v.msgType === 1" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="msg" v-html="decodeEmojiHtml(v.content.content)"></div>
                 </div>
-                <div class="msg-box img" v-else-if="v.msgType === 2">
-                  <!-- <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
-                    <svgIcon name="clear" />
-                  </div> -->
+                <div class="msg-box img" v-else-if="[2, 6].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="msg">
-                    <img :src="initImg(v.url)">
+                    <div class="img-box">
+                      <img :src="initImg(v.url || v.thumbURL)">
+                      <div class="load-cover" v-if="v.thumbURL && !v.url" :style="{'--height': `${100 - (v.percent || 0)}%`}">
+                        <div class="cancel-load-btn" v-if="v.percent && v.percent < 100" @click="downloadFile(v)">
+                          <svgIcon name="close" size="30px" color="#ccc" />
+                          <p>{{ v.percent }}%</p>
+                        </div>
+                        <div class="download-btn" @click="downloadFile(v)" v-else v-show="!v.percent">
+                          <svgIcon name="download" size="30px" color="#ccc" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="msg-box file" v-else-if="[3, 4].includes(v.msgType)">
+                <div class="msg-box file" v-else-if="[3, 4].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
                     <svgIcon name="clear" />
                   </div>

@@ -2,6 +2,28 @@ import md5 from 'js-md5'
 import CryptoJS from 'crypto-js'
 import u8arrayAdd from 'arraybuffer-concat'
 
+const stringToUint8Array = (str) => {
+  var arr = [];
+  for (var i = 0, j = str.length; i < j; ++i) {
+    arr.push(str.charCodeAt(i));
+  }
+  var tmpUint8Array = new Uint8Array(arr);
+  return tmpUint8Array
+}
+
+const uint8ArrayToString = (fileData) => {
+  var dataString = "";
+  for (var i = 0; i < fileData.length; i++) {
+    dataString += String.fromCharCode(fileData[i]);
+  }
+  return dataString
+}
+
+const checkHead = (arraybuf, length, key) => {
+  const prev = new Uint8Array(arraybuf).slice(0, length)
+  return uint8ArrayToString(prev) === key
+}
+
 CryptoJS.enc.u8array = {
   stringify: (wordArray) => {
     // Shortcuts
@@ -29,18 +51,32 @@ CryptoJS.enc.u8array = {
 
 onmessage = function(evt){
   //向主线程发送消息
-  const arraybuf = evt.data.arraybuf
+  const arraybufA = evt.data.arraybuf
   const size = evt.data.size
+  const chatUid = evt.data.chatUid
   const ffStr = 'FILESECRET'
-  const key = 123456000000000
+  const ttkey = md5('1234560000000000').substring(0, 16)
   const filename = evt.data.filename
   const isDaes = evt.data.isDaes
+  const strArayy = stringToUint8Array(ffStr)
+  var key = CryptoJS.enc.Latin1.parse(ttkey)
 
   if (isDaes) {
+    const isAes = checkHead(arraybufA, strArayy.length, ffStr)
+    if (!isAes) {
+      postMessage({
+        arraybuffer: arraybufA,
+        filename,
+        chatUid
+      })
+      return false
+    }
+    const end = new Uint8Array(arraybufA).length
+    const aaUint8Array = new Uint8Array(arraybufA).slice(strArayy.length, end)
+    const arraybuf = aaUint8Array.buffer
     const len = arraybuf.byteLength
     let arraybuffer = new Uint8Array(0)
     const pageArray = new Array(Math.ceil(len / size)).join(',').split(',')
-
     pageArray.map((v, i) => {
       if ((i + 1) * size >= len) {
         var klast = new Uint8Array(arraybuf.slice(i * size, len))
@@ -57,7 +93,7 @@ onmessage = function(evt){
         postMessage({
           arraybuffer: arraybuffer,
           filename: filename,
-          attkey: iiattKey
+          chatUid
         })
       } else {
         var klast = new Uint8Array(arraybuf.slice(i * size, (i + 1) * size))
@@ -73,11 +109,12 @@ onmessage = function(evt){
       }
     })
   } else {
+    const arraybuf = arraybufA
     const len = arraybuf.byteLength
     let arraybuffer = new Uint8Array(0)
     const pageArray = new Array(Math.ceil(len / size)).join(',').split(',')
     pageArray.map((v, i) => {
-      if ((i + 1) * size >= arraybuf.byteLength) {
+      if ((i + 1) * size >= len) {
         var klast = new Uint8Array(arraybuf.slice(i * size, len))
         var contentWA = CryptoJS.enc.u8array.parse(klast)
         var encrypted = CryptoJS.AES.encrypt(contentWA, key, {
@@ -85,10 +122,12 @@ onmessage = function(evt){
           padding: CryptoJS.pad.Pkcs7
         })
         var bv = CryptoJS.enc.u8array.stringify(encrypted.ciphertext)
-        arraybuffer = u8arrayAdd(arraybuffer, bv)
+        const lastBuffer = u8arrayAdd(arraybuffer, bv)
+        arraybuffer = u8arrayAdd(strArayy.buffer, lastBuffer)
         postMessage({
           uploadBlob: new Blob([arraybuffer]),
-          attKey: attkey
+          key,
+          chatUid
         })
       } else {
         var klast = new Uint8Array(arraybuf.slice(i * size, (i + 1) * size))
@@ -99,7 +138,7 @@ onmessage = function(evt){
         })
         var bv = CryptoJS.enc.u8array.stringify(encrypted.ciphertext)
         arraybuffer = u8arrayAdd(arraybuffer, bv)
-        console.log((i + 1) * size/arraybuf.byteLength)
+        console.log((i + 1) * size/len)
       }
     })
   }

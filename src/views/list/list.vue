@@ -29,8 +29,8 @@
           <dl>
             <dt :class="newTabVisible ? 'show':''" @click.stop="newTabVisible = !newTabVisible">新的朋友 <svgIcon name="right" size="16" color="#999" /></dt>
             <dd>
-              <ul class="user-tree">
-                <li :class="'new ' + (showUser && showUser.addType && showUser.userInfo && user.uid === showUser.uid ? 'active' : '')" v-for="(user, i) in applyList" :key="i" @click.stop="showing(user)">
+              <ul class="user-tree" v-if="applyList.length">
+                <li :class="'new ' + (showUser && showUser.addType && showUser.userInfo && user.uid === showUser.uid ? 'active' : '')" v-for="(user, i) in applyList" :key="i" @click.stop="showing(user)" @contextmenu.prevent="rightClick($event, 'right-click-menu', user)">
                   <div class="av-box">
                     <Avatar :userInfo="user" />
                   </div>
@@ -39,6 +39,7 @@
                   <div class="status">{{ initStatus(user.status) }}</div>
                 </li>
               </ul>
+              <div class="null-data" v-else>暂无新的好友</div>
             </dd>
           </dl>
           <dl>
@@ -94,8 +95,7 @@
         </div>
         <div class="contorl-box">
           <div class="control-line" v-if="[1, 3].includes(showUser.status)">
-            <button class="green" @click.stop="apply(1)" :disabled="+showUser.status === 3">{{showUser.status === 3 ? '已过期':'同意'}}</button>
-            <button class="del" @click.stop="apply(3)">删除</button>
+            <button class="green" @click.stop="apply(1, showUser)" :disabled="+showUser.status === 3">{{showUser.status === 3 ? '已过期':'同意'}}</button>
           </div>
           <div class="ct-btn" @click.stop="chatting" v-else>发消息</div>
         </div>

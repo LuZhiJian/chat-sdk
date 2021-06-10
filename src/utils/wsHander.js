@@ -1,19 +1,18 @@
 import constant from './constant'
 import store from '../store'
 import { getAesString, getDAesString, stringToUint8Array, uint8ArrayToString } from './aes'
-import { deepClone } from './common'
+import { deepClone, intervalTime } from './common'
 import md5 from 'js-md5'
 import api from './api'
 import db from '@/db'
+import loadFile from './download'
 import websocket from './websocket'
 
 const getAesKey = (loginId, uid) => {
-  console.log(`${loginId}_${uid}`)
   return md5(`${loginId}_${uid}`).substring(0, 16)
 }
 
 const getDaesKey = (fromUid, toUid) => {
-  console.log(`${fromUid}_${toUid}`)
   return md5(`${fromUid}_${toUid}`).substring(0, 16)
 }
 
@@ -61,6 +60,16 @@ const getContent = (content, key) => {
   return dsContent
 }
 
+const getFileDate = (downloadInfo) => {
+  return new Promise(resolve => {
+    loadFile(downloadInfo, (imgData) => {
+      if (imgData.finish) {
+        resolve(imgData)
+      }
+    })
+  })
+}
+
 const sayUser = async (id) => {
   const chatList = await db.userDB.chatUsers.getChattingList()
   const find = chatList.find(o => o.uid === id)
@@ -97,7 +106,7 @@ const sendCase = (code, param) => {
       const contentPak = {
         fromUid: param.fromUid || loginUid,
         toUid: param.toUid,
-        msgType: param.type,
+        msgType: param.type || param.msgType,
         content: param.content,
         flag: param.flag,
         time: param.time,
@@ -118,14 +127,20 @@ const sendCase = (code, param) => {
         db.msgDB.update(receipt)
       }
       break;
+    case 1004:
+      obj.body = param
+      const recall = {index: 'msgId', msgId: param.msgId, friendId: param.targetUid, isRecall: true}
+      db.msgDB.update(recall)
+      break;
     default:
       break;
   }
   return obj
 }
 
-const receiveCase = (protorlId, res = {}) => {
+const receiveCase = async (protorlId, res = {}) => {
   console.log(protorlId)
+  console.log(res)
   const loginData = store.state.loginData || {}
   const loginUid = loginData.userInfo && loginData.userInfo.uid
   const friendId = loginUid === res.fromUid ? res.toUid : res.fromUid
@@ -147,6 +162,37 @@ const receiveCase = (protorlId, res = {}) => {
     case 2000:
       const oneMsg = deepClone(res)
       oneMsg.content = getContent(oneMsg.content, key)
+      console.log(oneMsg.content)
+      switch (oneMsg.msgType) {
+        case 2:
+        case 5:
+          const suffix = oneMsg.msgType === 2 ? 'png' : 'gif'
+          const thumInfo = {
+            fileUrl: oneMsg.content.thumbURL,
+            size: 102400,
+            name: `${md5(oneMsg.content.thumbURL)}.${suffix}`,
+            type: 2,
+            chatUid: friendId
+          }
+          const thumdata = await getFileDate(thumInfo)
+          oneMsg.thumbURL = thumdata.locUrl
+          const autoLoad = oneMsg.content.fileSize/1024/1024 <= 1
+          if (autoLoad) {
+            const imgInfo = {
+              fileUrl: oneMsg.content.url,
+              size: oneMsg.content.fileSize,
+              name: `${md5(oneMsg.content.url)}.${suffix}`,
+              type: 2,
+              chatUid: friendId
+            }
+            const imgdata = await getFileDate(imgInfo)
+            oneMsg.url = imgdata.locUrl
+          }
+          break;
+
+        default:
+          break;
+      }
       oneMsg.time = oneMsg.sendTime
       oneMsg.uid = friendId
       if (oneMsg.fromUid !== loginUid) {
@@ -181,6 +227,33 @@ const receiveCase = (protorlId, res = {}) => {
         const receipt = {index: 'msgId', msgId: receiptMsg.msgId, friendId: receiptMsg.targetUid, state: status}
         db.msgDB.update(receipt)
       }
+      break;
+    case 1004:
+    case 2003:
+      console.log(msg)
+      // db.msgDB.delete(Object.assign(msg, { index: 'msgId' }))
+      break;
+    case 2004:
+      api.contactApplyList().then(async res => {
+        const unRecordList = deepClone(res.unRecordList || [])
+        const recordList = deepClone(res.recordList || [])
+        unRecordList.map(o => {
+          o.status = intervalTime(o.modifyTime) >= 7 ? 3 : 1 // 等待验证
+          o.uid = o.userInfo.uid
+        })
+        recordList.map(o => {
+          o.status = 2 // 已操作
+          o.uid = o.userInfo.uid
+        })
+        const all = [...unRecordList, ...recordList]
+        all.sort((a, b) => {
+          return b.modifyTime - a.modifyTime
+        })
+        await db.userDB.newUsers.saveNewUsers(all)
+        const friendNum = +store.state.newFriendNum
+        store.dispatch('setNewFriendNum', friendNum + 1)
+      })
+
       break;
     default:
       break;

@@ -10,7 +10,9 @@ export default createStore({
     contactsShowUser: storage.ssGet('contacts_show_user'),
     chattingUser: storage.ssGet('chat_ing_user'),
     dbMessageData: {},
-    ossClient: storage.ssGet('ossClient')
+    readyText: {},
+    ossClient: storage.ssGet('ossClient'),
+    newFriendNum: storage.lcGet('new_friend_num') || 0,
   },
   mutations: {
     'setLoginData'(state, info) {
@@ -53,6 +55,13 @@ export default createStore({
       db.userDB.close()
       db.msgDB.close()
     },
+    'setNewFriendNum'(state, num) {
+      state.newFriendNum = num
+      storage.lcSet('new_friend_num', num)
+    },
+    'setReadyTextObj'(state, obj) {
+      state.readyText = obj
+    },
   },
   actions: {
     setLoginData({ commit }, info) {
@@ -78,6 +87,12 @@ export default createStore({
     },
     setClearData({ commit }) {
       commit('clearData')
+    },
+    setNewFriendNum({ commit }, info) {
+      commit('setNewFriendNum', info)
+    },
+    setReadyTextObj({ commit }, obj) {
+      commit('setReadyTextObj', obj)
     },
   }
   // modules: {

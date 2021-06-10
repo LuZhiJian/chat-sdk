@@ -41,6 +41,25 @@ const checkFileNo = (locationNewPath, fileName, cb) => {
   checkFile()
 }
 
+const creatDAESfile = async (buf, fileName, chatUid, cb) => {
+  const loginData = store.state.loginData
+  const sessionDir = loginData && loginData.userInfo && loginData.userInfo.uid
+  const chatDir = chatUid
+  await mkdirPath(`${configDir}/msgDir`)
+  await mkdirPath(`${configDir}/msgDir/${sessionDir}`)
+  await mkdirPath(`${configDir}/msgDir/${sessionDir}/${chatDir}`)
+  const locationNewPath = `${configDir}/msgDir/${sessionDir}/${chatDir}`
+  checkFileNo(locationNewPath, fileName, (url) => {
+    fs.writeFile(url, buf, fileOption, (err) => {
+      if (!err) {
+        cb(url)
+      } else {
+        throw err
+      }
+    })
+  })
+}
+
 
 const imFile = (file, chatUid) => {
   return new Promise(resolve => {
@@ -130,9 +149,23 @@ const deleteDir = async (path) => {
   }
 }
 
+const checkFileIn = (url) => {
+  return new Promise((resolve, reject) => {
+    fs.access(url, (err) => {
+      if (err && err.code == "ENOENT") {
+        resolve(false)
+      } else {
+        resolve(true)
+      }
+    })
+  })
+}
+
 export default {
   imFile,
   deleteFile,
   deleteOneFile,
-  deleteDir
+  deleteDir,
+  creatDAESfile,
+  checkFileIn
 }

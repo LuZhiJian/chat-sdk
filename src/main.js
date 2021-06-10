@@ -32,6 +32,7 @@ app.config.globalProperties.$notify = {
 
 app.config.globalProperties.$contactsDB = database.userDB.contacts
 app.config.globalProperties.$chatUsersDB = database.userDB.chatUsers
+app.config.globalProperties.$newUsersDB = database.userDB.newUsers
 app.config.globalProperties.$msgDB = database.msgDB
 
 app.use(store).use(router).mount('#app')
