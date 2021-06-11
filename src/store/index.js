@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import * as storage from 'utils/storage'
+import { updateBadge } from '@/winset'
 import db from '../db'
 
 export default createStore({
@@ -13,6 +14,7 @@ export default createStore({
     readyText: {},
     ossClient: storage.ssGet('ossClient'),
     newFriendNum: storage.lcGet('new_friend_num') || 0,
+    newMessageNum: 0,
   },
   mutations: {
     'setLoginData'(state, info) {
@@ -62,6 +64,9 @@ export default createStore({
     'setReadyTextObj'(state, obj) {
       state.readyText = obj
     },
+    'setNewMessageNum'(state, num) {
+      state.newMessageNum = num
+    },
   },
   actions: {
     setLoginData({ commit }, info) {
@@ -80,6 +85,13 @@ export default createStore({
       commit('setChatUser', user)
     },
     setDBMessageData({ commit }, listObj) {
+      let msgNum = 0
+      Object.keys(listObj).forEach((key) => {
+        const oneNum = listObj[key].filter(o => o.read === false)
+        msgNum += oneNum.length
+      })
+      updateBadge(msgNum)
+      commit('setNewMessageNum', msgNum)
       commit('setDBMessageData', listObj)
     },
     setOssClient({ commit }, data) {

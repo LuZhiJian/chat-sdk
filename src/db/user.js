@@ -81,7 +81,9 @@ const userDB = {
       mydb = mydb ? mydb : await openDB()
       return new Promise(resolve => {
         mydb.transaction('rw', mydb.contacts, async() => {
-          const result = await mydb.contacts.put(user)
+          const userItem = await mydb.contacts.where('uid').equals(user.uid).first()
+          const newUser = {...userItem, ...{getApiTime: user.getApiTime, modifyTime: user.modifyTime}}
+          const result = await mydb.contacts.put(newUser)
           if (result) {
             resolve({code: 200})
           } else {
@@ -147,7 +149,9 @@ const userDB = {
       mydb = mydb ? mydb : await openDB()
       return new Promise(resolve => {
         mydb.transaction('rw', mydb.chatusers, async() => {
-          const result = await mydb.chatusers.put(user)
+          const userItem = await mydb.chatusers.where('uid').equals(user.uid).first()
+          const newUser = {...userItem, ...{getApiTime: user.getApiTime, modifyTime: user.modifyTime}}
+          const result = await mydb.chatusers.put(newUser)
           if (result) {
             resolve({code: 200})
           } else {

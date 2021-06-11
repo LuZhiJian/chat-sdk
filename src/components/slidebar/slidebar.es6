@@ -55,6 +55,10 @@ export default {
       } else {
         this.pages[1].tag = num
       }
+    },
+    onMessageNum(num) {
+      if (!this.pages.length) return
+      this.pages[0].tag = num
     }
 	},
   watch: {
@@ -68,11 +72,19 @@ export default {
       handler: 'onFriendNumChange',
       immediate: true,
       deep: true
+    },
+    newMessageNum: {
+      handler: 'onMessageNum',
+      immediate: true,
+      deep: true
     }
   },
   computed: {
     info() {
       return this.data
+    },
+    newMessageNum() {
+      return +this.$store.state.newMessageNum
     }
   }
 }

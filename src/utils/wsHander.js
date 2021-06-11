@@ -176,7 +176,7 @@ const receiveCase = async (protorlId, res = {}) => {
           }
           const thumdata = await getFileDate(thumInfo)
           oneMsg.thumbURL = thumdata.locUrl
-          const autoLoad = oneMsg.content.fileSize/1024/1024 <= 1
+          const autoLoad = oneMsg.content.fileSize/1024/1024 <= 2
           if (autoLoad) {
             const imgInfo = {
               fileUrl: oneMsg.content.url,
@@ -188,6 +188,18 @@ const receiveCase = async (protorlId, res = {}) => {
             const imgdata = await getFileDate(imgInfo)
             oneMsg.url = imgdata.locUrl
           }
+          break;
+        case 3:
+          const downloadAudio = {
+            fileUrl: oneMsg.content.url,
+            size: oneMsg.content.fileSize,
+            name: `${md5(oneMsg.content.url)}.mp3`,
+            type: 3,
+            chatUid: friendId
+          }
+          const audiodata = await getFileDate(downloadAudio)
+          oneMsg.url = audiodata.locUrl
+          oneMsg.noListen = true
           break;
 
         default:

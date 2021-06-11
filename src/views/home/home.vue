@@ -24,7 +24,7 @@
               </div>
               <div class="bt-line">
                 <span class="msg-txt" v-if="v.unread">[{{ v.unread }}条]</span>
-                <span class="msg-txt" v-html="decodeEmojiHtml(lastMsg(allChatData, v.uid))"></span>
+                <span class="msg-txt" v-html="decodeReadyHtml(lastMsg(allChatData, v.uid))"></span>
                 <svgIcon name="disturb" v-if="+v.disturb" class="icon-disturb" size="14" color="#999" />
               </div>
             </div>
@@ -37,7 +37,7 @@
         <div class="chatting-user-list" v-if="chattingList.length">
           <div :class="'user-item ' + (chatUser.uid === v.userInfo.uid ? 'active' : '')" v-for="v in chattingList" :key="v.userInfo.uid" @click.stop="chatting(v)" @contextmenu.prevent="showChatuserRtKey($event, 'right-click-menu', v)">
             <div class="av-box">
-              <Avatar :userInfo="v" :tag="getNum(chatMessageList, v)" />
+              <Avatar :userInfo="v" :tag="noreadData[v.uid]" />
             </div>
             <div class="txt-box">
               <div class="top-line">
@@ -46,7 +46,7 @@
               </div>
               <div class="bt-line">
                 <span class="msg-txt" v-if="v.unread">[{{ v.unread }}条]</span>
-                <span class="msg-txt" v-html="decodeEmojiHtml(lastMsg(allChatData, v.uid))"></span>
+                <span class="msg-txt" v-html="decodeReadyHtml(lastMsg(allChatData, v.uid))"></span>
                 <svgIcon name="disturb" v-if="+v.disturb" class="icon-disturb" size="14" color="#999" />
               </div>
             </div>
@@ -88,7 +88,15 @@
                     </div>
                   </div>
                 </div>
-                <div class="msg-box file" v-else-if="[3, 4].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
+                <div class="msg-box audio" v-else-if="[3].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
+                  <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
+                    <svgIcon name="clear" />
+                  </div>
+                  <div class="msg">
+                    <vue-audio v-if="v.url" :file="initMedia(v.url)" @onPlay="onPlay(v)" :whoForm="v.toUid !== +myInfo.uid ? 'self':'other'" :noListen="v.noListen ? true : false"></vue-audio>
+                  </div>
+                </div>
+                <div class="msg-box file" v-else-if="[7].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
                     <svgIcon name="clear" />
                   </div>

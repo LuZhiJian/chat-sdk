@@ -2,7 +2,7 @@ import { ref, computed, watch, reactive, toRefs } from 'vue'
 import EmojiFace from 'components/emojiFace'
 import RangeUtil from 'components/emojiFace/rangeUtil'
 import UploadFile from 'components/common/UploadFile.vue'
-import { deepClone, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
+import { deepClone, HTMLEncode, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
 import fileFix from 'utils/fileSend'
 
 export default {
@@ -177,7 +177,10 @@ export default {
         item.getAsString(str => {
           // str 是获取到的字符串
           const $input = this.$refs.textarea
-          this.pasteHtmlAtCaret(str)
+          console.log(str)
+          const en_str = HTMLEncode(str)
+          console.log(en_str)
+          this.pasteHtmlAtCaret(en_str)
           const value = decodeEmoji($input.innerHTML)
           this.setInputReadyTxt(value)
           this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
@@ -216,12 +219,18 @@ export default {
       const el = this.$refs.textarea
       el.innerHTML = ''
       this.curContent = ''
+      this.trueContent = ''
+    },
+    clearReadyTxt() {
+      const txtObj = deepClone(this.$store.state.readyText)
+      txtObj[this.newUser.uid] = ''
+      this.$store.dispatch('setReadyTextObj', txtObj)
     },
     //监听按键操作
     enterFun (event) {
       event.preventDefault() // 阻止浏览器默认换行操作
-      const value = decodeEmoji(event.target.innerHTML)
-      console.log(value)
+      const el = this.$refs.textarea
+      const value = decodeEmoji(el.innerHTML)
       if (!value) return false
       const msgData = {
         type: 1,
@@ -232,12 +241,13 @@ export default {
       }
       this.$emit('homesend', msgData)
       this.clearInput()
+      this.clearReadyTxt()
       return false
     },
 
     setReadyTextToInput(text) {
       if (!text) return false
-      this.pasteHtmlAtCaret(text)
+      this.pasteHtmlAtCaret(HTMLEncode(text))
     },
 
     ctrlOrMetaEnter() {

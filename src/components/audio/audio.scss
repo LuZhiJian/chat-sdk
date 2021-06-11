@@ -1,0 +1,115 @@
+@font-face {
+  font-family: 'icomoon';
+  src: url('fonts/icomoon.ttf?xy7egh') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.icon-download:before {
+  content: "\e960";
+}
+// .icon-play3:before {
+//   content: "\ea1c";
+// }
+// .icon-pause2:before {
+//   content: "\ea1d";
+// }
+.icon-stop2:before {
+  content: "\ea1e";
+}
+.icon-volume-high:before {
+  content: "\ea26";
+}
+.icon-volume-mute2:before {
+  content: "\ea2a";
+}
+.icon-paragraph-justify:before {
+  content: "\ea7a";
+}
+.icon-spinner11:before {
+  content: "\e984";
+}
+
+.icon-spinner10:before {
+  content: "\e983";
+}
+
+$prefixCls: "vue-sound";
+.#{$prefixCls}-wrapper {
+  .#{$prefixCls}__player {
+    height: 30px;
+    line-height: 30px;
+
+    a {
+      cursor: pointer;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .#{$prefixCls}__extern-wrapper {
+      display: inline-block;
+      margin-left: 10px;
+
+      > a {
+        margin-right: 5px;
+        vertical-align: 0;
+      }
+
+      .volume-toggle {
+        position: relative;
+
+        .volume-slider {
+          cursor: pointer;
+          position: absolute;
+          top: 0;
+          width: 80px;
+          left: 24px;
+        }
+      }
+    }
+
+    .#{$prefixCls}__playback-time-wrapper {
+      background: transparent;
+      position: relative;
+      width: 250px;
+      display: inline-block;
+      background: #e0dcd7;
+      height: 3px;
+      cursor: pointer;
+      font-size: 14px;
+      vertical-align: middle;
+
+      .#{$prefixCls}__playback-time-separator::after {
+          content:' : ';
+      }
+
+      .#{$prefixCls}__playback-time-total {
+
+      }
+
+      .#{$prefixCls}__playback-time-indicator {
+          background: #5099ff;
+          position: absolute;
+          transition: width .1s linear;
+          top: 0;
+          left: 0;
+          bottom: 0;
+      }
+    }
+  }
+}

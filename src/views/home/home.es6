@@ -1,12 +1,12 @@
 import { reactive, toRefs } from 'vue'
 import { ChatTime } from '@/filter'
 import { Avatar, Editor } from 'components'
-import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, parseEmoji, vagueSearchList, checkFileIn, resetTime, inTime } from 'utils/common'
+import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, HTMLEncode, parseEmoji, vagueSearchList, checkFileIn, resetTime, inTime } from 'utils/common'
 import loadFile from 'utils/download'
 import { remote, ipcRenderer, clipboard, nativeImage } from 'electron'
 import websocket from 'utils/websocket'
-import { updateBadge } from '@/winset'
 import Win from 'utils/winOptions'
+import VueAudio from 'components/audio'
 import md5 from 'js-md5'
 import api from 'utils/api'
 import db from '@/db'
@@ -16,7 +16,8 @@ export default {
 	components: {
     ChatTime,
     Avatar,
-    Editor
+    Editor,
+    'vue-audio': VueAudio
 	},
 	data () {
 		return {
@@ -25,7 +26,7 @@ export default {
       searchList: [],
       chatMessageList: [],
       allChatData: {},
-      msgNum: 0,
+      noreadData: {},
       receiptList: [],
       receiptKeep: false,
       receiptAble: true
@@ -54,6 +55,9 @@ export default {
       return msgList
     }
     const decodeEmojiHtml = (str) => {
+      return parseEmoji(HTMLEncode(str))
+    }
+    const decodeReadyHtml = (str) => {
       return parseEmoji(str)
     }
     const initImg = (path) => {
@@ -83,18 +87,6 @@ export default {
       }
       return show
     }
-
-    const getNum = (msgList, user) => {
-      if (!msgList) return 0
-      let len = 0
-      const list = msgList[user.uid] || []
-      const noreadList = list.filter(o => {
-        return o.read === false
-      })
-      len = noreadList.length
-      return len
-    }
-
     const updateDetail = async (user) => {
       await db.userDB.contacts.update(user)
       await db.userDB.chatUsers.update(user)
@@ -107,8 +99,8 @@ export default {
       initMedia,
       initFileName,
       decodeEmojiHtml,
+      decodeReadyHtml,
       timeLine,
-      getNum,
       updateDetail
     }
   },
@@ -224,10 +216,20 @@ export default {
         flag: sign,
         time: sign
       })
+      if (sendData.tgype === 1 || sendData.msgType === 1) {
+        sendData.content.content = HTMLEncode(sendData.content.content)
+      }
       websocket.send(2, sendData)
     },
     cancelUpload(msg) {
       this.$refs.editor.cancelUpload(msg)
+    },
+    //语音已播放状态
+    onPlay(v) {
+      const msg = deepClone(v)
+      msg.index = 'msgId'
+      msg.noListen = false
+      db.msgDB.update(msg)
     },
     async openFile(item) {
       if (item.progress && item.progress !== 100) return false
@@ -308,6 +310,17 @@ export default {
       })
       ipcRenderer.send(e, data)
     },
+    // 获取消息列表未读数量
+    getNum(msgList) {
+      if (!msgList) return 0
+      this.chattingList.map(o => {
+        let list = msgList[o.uid] || []
+        let noreadList = list.filter(v => {
+          return v.read === false
+        })
+        this.noreadData[o.uid] = noreadList.length
+      })
+    },
     // 更新回话列表用户的显示消息
     lastMsg(list, id) {
       if (!list || list.length) return ''
@@ -315,20 +328,25 @@ export default {
       const txtObj = this.$store.state.readyText
       const readyTxt = this.chatUser.uid === id ? '' : txtObj[id]
       if (readyTxt) {
-        return `<span>[草稿]</span>${readyTxt}`
+        const en_txt = HTMLEncode(readyTxt)
+        return `<span>[草稿]</span>${en_txt}`
       }
       const obj = list[id] && list[id][list[id].length - 1]
       let msg = ''
       if (!obj) return ''
       switch (obj && +obj.msgType) {
         case 1:
-          msg = obj.content.content
+          msg = HTMLEncode(obj.content.content)
           break;
         case 2:
           msg = '[图片]'
           break;
         case 3:
+          msg = '[语音]'
+          break;
         case 4:
+          msg = '[视频]'
+          break;
         case 6:
           msg = '[动态表情]'
           break;
@@ -365,6 +383,7 @@ export default {
     },
     //消息回执
     async receiptMessage() {
+      if (this.$route.name !== 'Home') return false
       if (!this.chatUser) return false
       if (!this.myInfo || !this.myInfo.uid) return false
       const chatId = this.chatUser.uid
@@ -407,13 +426,8 @@ export default {
       goBottom()
     },
     onDBMessageChange(msgData) {
-      this.msgNum = 0
-      Object.keys(msgData).forEach((key) => {
-        const oneNum = msgData[key].filter(o => o.read === false)
-        this.msgNum += oneNum.length
-      })
-      updateBadge(this.msgNum)
       this.allChatData = deepClone(msgData)
+      this.getNum(this.allChatData)
       if (this.chatUser) {
         this.chatMessageList = this.allChatData[this.chatUser.uid]
         if (remote.getCurrentWindow().isFocused() && this.receiptAble) {
