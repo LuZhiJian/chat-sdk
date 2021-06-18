@@ -24,6 +24,7 @@
     "electron-windows-badge": "^1.1.0",
     "fs": "^0.0.1-security",
     "js-md5": "^0.7.3",
+    "lodash": "^4.17.21",
     "lrz": "^4.9.41",
     "node-sass": "npm:dart-sass",
     "os": "^0.1.1",

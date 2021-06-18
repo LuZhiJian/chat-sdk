@@ -2,7 +2,7 @@ import { ref, computed, watch, reactive, toRefs } from 'vue'
 import EmojiFace from 'components/emojiFace'
 import RangeUtil from 'components/emojiFace/rangeUtil'
 import UploadFile from 'components/common/UploadFile.vue'
-import { deepClone, HTMLEncode, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType } from 'utils/common'
+import { deepClone, HTMLEncode, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType, checkCutImg, imgFileGetImg, decodeCutImg } from 'utils/common'
 import fileFix from 'utils/fileSend'
 
 export default {
@@ -16,7 +16,8 @@ export default {
       curContent: '',
       emoji: false,
       selection: null,
-      trueContent: ''
+      trueContent: '',
+      cutImgObj: {}
 		}
 	},
   props: {
@@ -148,6 +149,7 @@ export default {
     async dragHandle(e) {
       // console.log(e)
       const file = e.dataTransfer.files[0]
+      if (!file) return false
       const size = file.size / 1024 / 1024
       if (size > 50) {
         this.$notify.open("error", "文件大小不能超过50M")
@@ -167,26 +169,85 @@ export default {
       }
       return false
     },
-    pasteHandle(e) {
+    async pasteHandle(e) {
       let data = (e.clipboardData || window.clipboardData)
       if (!data && !data.items) {
         return false
       }
       const item = data.items[0]
-      if (item && item.kind === 'string') {
+      const fileItem = data.files[0]
+      if (fileItem) {
+        if (checkCutImg(this.$refs.textarea.innerHTML)) {
+          this.$notify.open('warning', '暂时不支持粘贴多张图片哦')
+          return false
+        }
+        const file = fileItem
+        const {img, id} = await imgFileGetImg(file)
+        const $input = this.$refs.textarea
+        $input.focus()
+        if (this.selection) {
+          RangeUtil.restoreSelection(this.selection)
+        }
+        this.$nextTick(() => {
+          try {
+            this.cutImgObj[this.chatUser.uid] = {
+              file: file,
+              id: id
+            }
+            this.$store.dispatch('setPasteImgObj', this.cutImgObj)
+            RangeUtil.replaceSelection(img)
+            const value = decodeEmoji(HTMLEncode($input.innerHTML))
+            this.setInputReadyTxt(value)
+            this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+            $input.focus()
+          } catch (e) {
+            /* eslint-disable no-console */
+            console.error(e)
+          }
+        })
+        return false
+      } else if (item && item.kind === 'string') {
         item.getAsString(str => {
           // str 是获取到的字符串
           const $input = this.$refs.textarea
-          console.log(str)
           const en_str = HTMLEncode(str)
-          console.log(en_str)
           this.pasteHtmlAtCaret(en_str)
           const value = decodeEmoji($input.innerHTML)
           this.setInputReadyTxt(value)
           this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
         })
+      }else if (fileItem || (item.kind === 'file' && item.type.indexOf('image/') !== -1)) {
+        if (checkCutImg(this.$refs.textarea.innerHTML)) {
+          this.$notify.open('warning', '暂时不支持粘贴多张图片哦')
+          return false
+        }
+        const file = item.getAsFile()
+        const {img, id} = await imgFileGetImg(file)
+        const $input = this.$refs.textarea
+        $input.focus()
+        if (this.selection) {
+          RangeUtil.restoreSelection(this.selection)
+        }
+        this.$nextTick(() => {
+          try {
+            this.cutImgObj[this.chatUser.uid] = {
+              file: file,
+              id: id
+            }
+            this.$store.dispatch('setPasteImgObj', this.cutImgObj)
+            RangeUtil.replaceSelection(img)
+            const value = decodeEmoji(HTMLEncode($input.innerHTML))
+            this.setInputReadyTxt(value)
+            this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+            $input.focus()
+          } catch (e) {
+            /* eslint-disable no-console */
+            console.error(e)
+          }
+        })
+      } else {
+        return false
       }
-      return false
     },
     //光标位置插入内容
     pasteHtmlAtCaret(html) {
@@ -231,23 +292,60 @@ export default {
       event.preventDefault() // 阻止浏览器默认换行操作
       const el = this.$refs.textarea
       const value = decodeEmoji(el.innerHTML)
+      const cutImgObj = this.$store.state.pasteImgObj[this.newUser.uid]
       if (!value) return false
-      const msgData = {
-        type: 1,
-        toUid: this.newUser.uid,
-        content: {
-          content: value
+      if (cutImgObj) {
+        const contentList = decodeCutImg(value, cutImgObj)
+        if (!checkCutImg(value)) {
+          contentList.map(o => {
+            o.value = o.type === 'file' ? '' : o.value
+          })
         }
+        this.next(0, contentList, () => {});
+      } else {
+        const msgData = {
+          type: 1,
+          toUid: this.newUser.uid,
+          content: {
+            content: value
+          }
+        }
+        this.$emit('homesend', msgData)
       }
-      this.$emit('homesend', msgData)
       this.clearInput()
       this.clearReadyTxt()
       return false
     },
 
+    //图片文本消息同步递归处理
+    async next(i, list, callback){
+      if(i < list.length){
+        if (list[i].type === 'file') {
+          if (!list[i].value){
+            this.next(++i, list, callback)
+          }else{
+            await this.$refs.uploaders.uploadingFun(list[i].value)
+          }
+        } else {
+          if(list[i].value) {
+            const msgData = {
+              type: 1,
+              toUid: this.newUser.uid,
+              content: {
+                content: list[i].value.replace(/\@[^\s]+\s/ig, function(v) {return v.replace(/\s/ig, String.fromCharCode(8197))})
+              }
+            }
+            this.$emit('homesend', msgData)
+          }
+        }
+        this.next(++i, list, callback)
+      }
+    },
+
     setReadyTextToInput(text) {
       if (!text) return false
-      this.pasteHtmlAtCaret(HTMLEncode(text))
+      const result = checkCutImg(text) ? text : HTMLEncode(text)
+      this.pasteHtmlAtCaret(result)
     },
 
     ctrlOrMetaEnter() {

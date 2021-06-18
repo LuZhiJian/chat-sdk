@@ -5,7 +5,7 @@ const Win = {
   avatar: function(data) {
     const param = {
       winInfo: {
-        title: '图片展示',
+        title: '头像展示',
         route: '#/window/avatar',
         width: 400,
         height: 424,
@@ -37,6 +37,29 @@ const Win = {
       },
       position: true,
       win: 'card-data',
+      data: Object.assign({}, data)
+    }
+    windowCreate(param)
+  },
+  // media媒体展示
+  media: function(data) {
+    const param = {
+      winInfo: {
+        title: '视频图片媒体展示',
+        route: '#/window/media',
+        width: 400,
+        height: 424,
+        minWidth: 200,
+        minHeight: 240,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        backgroundColor: '#fff',
+        resizable: true,
+        modal: false,
+        maximize: true,
+        devTools: false
+      },
+      win: 'media-data',
       data: Object.assign({}, data)
     }
     windowCreate(param)

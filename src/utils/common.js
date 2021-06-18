@@ -1,7 +1,8 @@
 import constant from 'utils/constant'
 import store from '@/store'
 import creatFile from './creatFile'
-
+import md5 from 'js-md5'
+import _ from 'lodash'
 import emojiJson from 'components/emojiFace/emoji.json'
 import iconTxt from 'assets/filetype/icon-txt.png'
 import iconApk from 'assets/filetype/icon-apk.png'
@@ -442,6 +443,96 @@ export const inTime = (getApiTime) => {
   const nowTiming = new Date().getTime()
   const csTime = Math.abs(nowTiming - (getApiTime || 0))/1000/60
   return csTime
+}
+
+export const checkCutImg = (str) => {
+  let value = str || ''
+  const key = `img_${md5(new Date().getTime().toString())}`
+  const reTag = new RegExp(`<img name="cut_img"(?:.|\s)*?>`, 'g')
+  value = value.replace(reTag, key)
+  const have = value.indexOf(key) >= 0
+  return have
+}
+
+export const imgFileGetImg = (file) => {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (event) => {
+      const img = new Image
+      img.name = 'cut_img'
+      img.src = event.target.result
+      img.alt = 'cut_img'
+      img.id = `img_${md5(event.target.result)}`
+      resolve({img: img, id: `img_${md5(event.target.result)}`})
+    }
+  })
+}
+
+export const decodeCutImg = (str, cutImgObj) => {
+  try {
+    let value = str || ''
+    const reTag = new RegExp(`<img(?:.|\s)*?id="${cutImgObj.id}">`, 'g')
+    value = value.replace(reTag, cutImgObj.id)
+    const isStart = cutImgObj.id ? _.startsWith(value, cutImgObj.id) : false
+    const msgList = _.compact(_.split(value, cutImgObj.id))
+    let sendArr = []
+    switch (msgList.length) {
+      case 2:
+        sendArr = [
+          {
+            type: 'text',
+            value: msgList[0]
+          },
+          {
+            type: 'file',
+            value: cutImgObj.file
+          },
+          {
+            type: 'text',
+            value: msgList[1]
+          }
+        ]
+        break;
+      case 1:
+        sendArr = isStart ? [
+          {
+            type: 'file',
+            value: cutImgObj.file
+          },
+          {
+            type: 'text',
+            value: msgList[0]
+          }
+        ] : [
+          {
+            type: 'text',
+            value: msgList[0]
+          },
+          {
+            type: 'file',
+            value: cutImgObj.file
+          }
+        ]
+        break;
+      default:
+          sendArr = isStart ? [
+            {
+              type: 'file',
+              value: cutImgObj.file
+            }
+          ] : [
+            {
+              type: 'text',
+              value: msgList[0]
+            }
+          ]
+        break;
+    }
+    return sendArr
+  } catch (error) {
+    return []
+  }
 }
 
 export const FileAesBuffer = (arraybuf, size, filename) => {

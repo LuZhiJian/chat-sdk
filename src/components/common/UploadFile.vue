@@ -216,13 +216,10 @@ export default {
       // 清除file的文本框的文件信息清除
       const $input = document.getElementById('upload-input')
       $input.value = ''
-      const aesFileData = await this.toAesFile(optFile, filedata)
       const thumimgdata = filedata.type === 2 ? await this.makeThumimg(file, filedata) : null
-      const newblob = aesFileData.uploadBlob
       this.getImgToBase64(filedata, file, async (dataUrl, newFile) => {
         const filePath = await creatfile.imFile(file, this.chatUid)
         let data = [2, 4, 5].includes(filedata.type) ? {
-          file: newblob,
           key: file.name,
           fileType: filedata.type,
           suffix: filedata.suffix,
@@ -238,7 +235,6 @@ export default {
           },
           uid: this.chatUid
         } : {
-          file: newblob,
           key: file.name,
           fileType: filedata.type,
           suffix: filedata.suffix,
@@ -253,6 +249,7 @@ export default {
         }
         if ([3, 4].includes(filedata.type)) {
           data.content.duration = newFile.duration
+          data.fileType = 7
         }
         const sign = new Date().getTime()
         data = Object.assign(data, {
@@ -260,15 +257,18 @@ export default {
           flag: sign,
           toUid: this.chatUid
         })
-        this.uploadFile(data)
+        this.uploadFile(data, optFile, filedata)
       })
     },
 
-    async uploadFile(data) {
+    async uploadFile(data, optFile, filedata) {
       const that = this
       const oldData = deepClone(data)
       that.$emit('uploaddata', Object.assign(data, {ready: false, progress: 0}))
-      oss.client(data.fileType, data.file, data.size, (gressData) => {
+      const aesFileData = await this.toAesFile(optFile, filedata)
+      const newblob = aesFileData.uploadBlob
+      oss.client(data.fileType, newblob, data.size, (gressData) => {
+        gressData.url = oldData.url
         that.$emit('progress', Object.assign(data, gressData))
       }, res => {
         const sendData = {...res, ...data}

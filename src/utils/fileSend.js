@@ -1,16 +1,18 @@
 import store from '../store'
 import db from '@/db'
+import { goBottom } from './common'
 import websocket from './websocket'
 const loginData = store.state.loginData || {}
 
 const fileFix = {
   loginUid: loginData.userInfo && loginData.userInfo.uid,
-  ready(param) {
+  async ready(param) {
     const msg = Object.assign(param, {
       fromUid: this.loginUid,
       msgType: param.fileType
     })
-    db.msgDB.add(msg)
+    await db.msgDB.add(msg)
+    goBottom()
   },
   progress(param) {
     const msg = Object.assign(param, {

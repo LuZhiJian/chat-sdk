@@ -130,6 +130,8 @@ export class Window {
     if (args.backgroundColor) opt.backgroundColor = args.backgroundColor
     if (args.minWidth) opt.minWidth = args.minWidth
     if (args.minHeight) opt.minHeight = args.minHeight
+    if (args.maxWidth) opt.maxWidth = args.maxWidth
+    if (args.maxHeight) opt.maxHeight = args.maxHeight
     if (args.isMainWin) opt.titleBarStyle = 'hidden'
     let win = new BrowserWindow(opt)
     // console.log('窗口id：' + win.id)

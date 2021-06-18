@@ -1,7 +1,7 @@
 import { reactive, toRefs } from 'vue'
 import { ChatTime } from '@/filter'
 import { Avatar, Editor } from 'components'
-import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, HTMLEncode, parseEmoji, vagueSearchList, checkFileIn, resetTime, inTime } from 'utils/common'
+import { deepClone, timeTalkFilter, goBottom, parseEmojiShowCode, HTMLEncode, parseEmoji, vagueSearchList, checkFileIn, resetTime, inTime, checkCutImg } from 'utils/common'
 import loadFile from 'utils/download'
 import { remote, ipcRenderer, clipboard, nativeImage } from 'electron'
 import websocket from 'utils/websocket'
@@ -10,6 +10,11 @@ import VueAudio from 'components/audio'
 import md5 from 'js-md5'
 import api from 'utils/api'
 import db from '@/db'
+
+const replaceTxt = (val) => {
+  const con = val.split('<img name="cut_img"')[0]
+  return `${con}[图片]...`
+}
 
 export default {
 	name: 'home',
@@ -29,7 +34,10 @@ export default {
       noreadData: {},
       receiptList: [],
       receiptKeep: false,
-      receiptAble: true
+      receiptAble: true,
+      isScrollLoad: false,
+      curViewSrollTop: 0,
+      newMsgNum: 0,
 		}
 	},
   setup() {
@@ -177,8 +185,15 @@ export default {
         this.openFile(arg.item)
       })
     },
+    // 监听滚动事件做判断
+    async scrollEvent(event) {
+      this.curViewSrollTop = event.target.scrollHeight - event.target.scrollTop - event.target.clientHeight
+      if (this.curViewSrollTop < 10) {
+        this.newMsgNum = 0
+      }
+    },
     showCard(uid) {
-      const user = uid !== +this.myInfo.uid ? this.myInfo : (this.chatUser && this.chatUser.userInfo)
+      const user = uid === +this.myInfo.uid ? this.myInfo : (this.chatUser && this.chatUser.userInfo)
       const userData = Object.assign(user, {loginId: this.myInfo.uid})
       Win.card(userData)
     },
@@ -196,6 +211,8 @@ export default {
         this.$refs.editor.clearInput()
         this.$refs.editor.getFocus()
       }
+      this.curViewSrollTop = 0 //初始化当前滚动值
+      this.newMsgNum = 0
       if (inTime(item.getApiTime) >= 2) {
         detail.userInfo = (await api.contactDetail({ param: { targetUid: item.uid } })).userInfo
         detail.getApiTime = new Date().getTime()
@@ -249,13 +266,33 @@ export default {
         this.cancelUpload(item)
         return false
       } else if (item.url) {
-        const isPic = [2, 6].includes(item.msgType)
+        const isPic = [6].includes(item.msgType)
         if (isPic) return false
+        const isShow = [2,4].includes(item.msgType)
+        if (isShow) {
+          console.log(item)
+          Win.media(item)
+          return false
+        }
         this.openFile(item)
         return false
       } else {
         const chatMssList = deepClone(this.allChatData[item.uid])
-        const suffix = item.msgType === 2 ? 'png' : 'gif'
+        let suffix = ''
+        switch (item.msgType) {
+          case 2:
+            suffix = 'png'
+            break;
+          case 4:
+            suffix = 'mp4'
+            break;
+          case 6:
+            suffix = 'gif'
+            break;
+
+          default:
+            break;
+        }
         // 下载中的时候防止再次执行下载
         if (item.loadsize && item.loadsize < item.content.fileSize) {
           loadFile(false, () => {
@@ -328,7 +365,8 @@ export default {
       const txtObj = this.$store.state.readyText
       const readyTxt = this.chatUser.uid === id ? '' : txtObj[id]
       if (readyTxt) {
-        const en_txt = HTMLEncode(readyTxt)
+        const haveImg = checkCutImg(readyTxt)
+        const en_txt = haveImg ? HTMLEncode(replaceTxt(readyTxt)) : HTMLEncode(readyTxt)
         return `<span>[草稿]</span>${en_txt}`
       }
       const obj = list[id] && list[id][list[id].length - 1]
@@ -413,6 +451,10 @@ export default {
       }
       this.$store.dispatch('setDBMessageData', this.allChatData)
     },
+    readNewMsgFun() {
+      this.newMsgNum = 0
+      goBottom()
+    },
     async onChatuserChange(user) {
       if (!user) return false
       this.chatMessageList = this.allChatData[user.uid]
@@ -429,11 +471,33 @@ export default {
       this.allChatData = deepClone(msgData)
       this.getNum(this.allChatData)
       if (this.chatUser) {
-        this.chatMessageList = this.allChatData[this.chatUser.uid]
+        this.chatMessageList = this.allChatData[this.chatUser.uid] || []
         if (remote.getCurrentWindow().isFocused() && this.receiptAble) {
           this.receiptMessage()
         }
-        goBottom()
+        this.$nextTick(() => {
+          if (this.chatMessageList.length && !this.isScrollLoad) {
+            goBottom()
+            this.isScrollLoad = true
+          }
+        })
+      }
+    },
+    onNewMsgComeChange(msg) {
+      const newMsg = deepClone(msg)
+      this.receiptAble = true
+      if (this.chatUser && this.chatUser.uid === msg.fromUid) {
+        if (this.curViewSrollTop > 200) {
+          if (msg.fromUid === this.myInfo.uid) {
+            this.newMsgNum = 0
+            goBottom()
+          } else {
+            this.newMsgNum++
+          }
+        } else {
+          this.newMsgNum = 0
+          goBottom()
+        }
       }
     }
 	},
@@ -448,6 +512,11 @@ export default {
       immediate: true,
       deep: true
     },
+    newMsgCome: {
+      handler: 'onNewMsgComeChange',
+      immediate: true,
+      deep: true
+    }
   },
   computed: {
     chatUser() {
@@ -460,6 +529,9 @@ export default {
     },
     dbMessage() {
       return this.$store.state.dbMessageData
-    }
+    },
+    newMsgCome() {
+      return this.$store.state.receiveMessagesBy
+    },
   }
 }

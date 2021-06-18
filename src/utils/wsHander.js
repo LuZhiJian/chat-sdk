@@ -1,12 +1,13 @@
 import constant from './constant'
 import store from '../store'
 import { getAesString, getDAesString, stringToUint8Array, uint8ArrayToString } from './aes'
-import { deepClone, intervalTime } from './common'
+import { deepClone, intervalTime, goBottom } from './common'
 import md5 from 'js-md5'
 import api from './api'
 import db from '@/db'
 import loadFile from './download'
 import websocket from './websocket'
+import Notifications from './notification'
 
 const getAesKey = (loginId, uid) => {
   return md5(`${loginId}_${uid}`).substring(0, 16)
@@ -70,19 +71,22 @@ const getFileDate = (downloadInfo) => {
   })
 }
 
-const sayUser = async (id) => {
-  const chatList = await db.userDB.chatUsers.getChattingList()
-  const find = chatList.find(o => o.uid === id)
-  if (find) {
-    return true
-  } else {
-    const user = await db.userDB.contacts.getContactDetail(id) || await api.contactDetail({ param: { targetUid: id } })
-    await db.userDB.chatUsers.addChatUser(user)
-    store.dispatch('setChatUser', user)
-  }
+const sayUser = (id) => {
+  return new Promise(async resolve => {
+    const chatList = await db.userDB.chatUsers.getChattingList()
+    const find = chatList.find(o => o.uid === id)
+    if (find) {
+      resolve(find)
+    } else {
+      const user = await db.userDB.contacts.getContactDetail(id) || await api.contactDetail({ param: { targetUid: id } })
+      await db.userDB.chatUsers.addChatUser(user)
+      store.dispatch('setChatUser', user)
+      resolve(user)
+    }
+  })
 }
 
-const sendCase = (code, param) => {
+const sendCase = async (code, param) => {
   let obj = {
     seq: param.flag || new Date().getTime(),
     body: {}
@@ -117,7 +121,8 @@ const sendCase = (code, param) => {
       sendPak.content = setContent(param.content, key)
       obj.body = sendPak
       if (!param.fileId) {
-        db.msgDB.add(contentPak)
+        await db.msgDB.add(contentPak)
+        goBottom()
       }
       break;
     case 1003:
@@ -162,7 +167,7 @@ const receiveCase = async (protorlId, res = {}) => {
     case 2000:
       const oneMsg = deepClone(res)
       oneMsg.content = getContent(oneMsg.content, key)
-      console.log(oneMsg.content)
+      // console.log(oneMsg.content)
       switch (oneMsg.msgType) {
         case 2:
         case 5:
@@ -201,6 +206,16 @@ const receiveCase = async (protorlId, res = {}) => {
           oneMsg.url = audiodata.locUrl
           oneMsg.noListen = true
           break;
+        case 4:
+          const videoThumb = {
+            fileUrl: oneMsg.content.thumbURL,
+            size: 102400,
+            name: `${md5(oneMsg.content.thumbURL)}.png`,
+            type: 2,
+            chatUid: friendId
+          }
+          const vthumd = await getFileDate(videoThumb)
+          oneMsg.thumbURL = vthumd.locUrl
 
         default:
           break;
@@ -210,8 +225,13 @@ const receiveCase = async (protorlId, res = {}) => {
       if (oneMsg.fromUid !== loginUid) {
         oneMsg.read = false
       }
-      sayUser(friendId)
+      const cuser = await sayUser(friendId)
+      if (cuser && cuser.userInfo) {
+        oneMsg.showName = cuser.userInfo.nickName
+      }
       console.log(oneMsg)
+      Notifications.initAlert(oneMsg)
+      store.dispatch('getReceiveMessagesBy', oneMsg)
       const receiptdata = {
         msgId: oneMsg.msgId,
         targetUid: oneMsg.fromUid,
@@ -274,8 +294,8 @@ const receiveCase = async (protorlId, res = {}) => {
 
 const Cat = {
   sendFun(code, data) {
-    return new Promise(resolve => {
-      const messageContent = sendCase(code, data)
+    return new Promise(async resolve => {
+      const messageContent = await sendCase(code, data)
       console.log(messageContent)
       const dataString = JSON.stringify(messageContent)
       const dataBytes = stringToUint8Array(dataString)

@@ -36,6 +36,14 @@ const routes = [
       isWindow: true
     },
     component: () => import('@/views/window/card')
+  },
+  {
+    path: '/window/media',
+    name: 'WinMedia',
+    meta: {
+      isWindow: true
+    },
+    component: () => import('@/views/window/media')
   }
 ]
 

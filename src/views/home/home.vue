@@ -62,26 +62,31 @@
         </div>
       </div>
       <div class="message-main-inner">
-        <div class="message-main-scroll" id="message-scroll">
+        <div class="message-main-scroll" id="message-scroll" @scroll.passive="scrollEvent">
+          <div class="new-msg-tips" onselectstart="return false;" v-show="newMsgNum > 0" @click="readNewMsgFun">
+            <svgIcon name="to" size="20" color="#253b78" />
+            {{newMsgNum}}条新消息
+            <svgIcon name="close" class="icon-close" size="16" color="#253b78" @click.stop="newMsgNum = 0" />
+          </div>
           <div class="message-main-bying">
             <div :class="'message-item ' + (v.toUid !== +myInfo.uid ? 'me':'')" v-for="(v, i) in chatMessageList" :key="v.id">
               <ChatTime :chatTime="v.time" v-if="i > 0 && timeLine(chatMessageList[i].time, chatMessageList[i-1].time)" />
               <div class="recall-txt" v-if="v.isRecall">{{ (v.toUid !== +myInfo.uid ? '你' : '对方') + '撤回了一条消息' }}</div>
               <div :class="`msg-line state-${v.state}`" v-else>
-                <Avatar :userInfo="v.toUid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.uid)" />
+                <Avatar :userInfo="v.toUid !== +myInfo.uid ? myInfo : chatUser" @click.stop="showCard(v.fromUid)" />
                 <div class="msg-box" v-if="v.msgType === 1" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="msg" v-html="decodeEmojiHtml(v.content.content)"></div>
                 </div>
                 <div class="msg-box img" v-else-if="[2, 6].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
                   <div class="msg">
-                    <div class="img-box">
+                    <div class="img-box" @click="downloadFile(v)">
                       <img :src="initImg(v.url || v.thumbURL)">
                       <div class="load-cover" v-if="v.thumbURL && !v.url" :style="{'--height': `${100 - (v.percent || 0)}%`}">
-                        <div class="cancel-load-btn" v-if="v.percent && v.percent < 100" @click="downloadFile(v)">
+                        <div class="cancel-load-btn" v-if="v.percent && v.percent < 100">
                           <svgIcon name="close" size="30px" color="#ccc" />
                           <p>{{ v.percent }}%</p>
                         </div>
-                        <div class="download-btn" @click="downloadFile(v)" v-else v-show="!v.percent">
+                        <div class="download-btn" v-else v-show="!v.percent">
                           <svgIcon name="download" size="30px" color="#ccc" />
                         </div>
                       </div>
@@ -94,6 +99,28 @@
                   </div>
                   <div class="msg">
                     <vue-audio v-if="v.url" :file="initMedia(v.url)" @onPlay="onPlay(v)" :whoForm="v.toUid !== +myInfo.uid ? 'self':'other'" :noListen="v.noListen ? true : false"></vue-audio>
+                  </div>
+                </div>
+                <div class="msg-box video" v-else-if="[4].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">
+                  <div class="cancel-btn" v-if="v.progress < 100" @click.stop="cancelUpload(v)">
+                    <svgIcon name="clear" />
+                  </div>
+                  <div class="msg">
+                    <div class="img-box">
+                      <img :src="initImg(v.thumbURL)">
+                      <div class="load-cover" v-if="v.thumbURL && !v.url" :style="{'--height': `${100 - (v.percent || 0)}%`}" @click="downloadFile(v)">
+                        <div class="cancel-load-btn" v-if="v.percent && v.percent < 100">
+                          <svgIcon name="close" size="30px" color="#ccc" />
+                          <p>{{ v.percent }}%</p>
+                        </div>
+                        <div class="download-btn" v-else v-show="!v.percent">
+                          <svgIcon name="download" size="30px" color="#ccc" />
+                        </div>
+                      </div>
+                      <div class="div-play" v-if="v.url" @click="downloadFile(v)" >
+                        <svgIcon name="video-play" size="30" color="#fff" />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="msg-box file" v-else-if="[7].includes(v.msgType)" @contextmenu.prevent="showChatRclickList($event, 'right-click-menu', v)">

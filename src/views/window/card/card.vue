@@ -3,7 +3,7 @@
     <div class="card-content" v-if="cardData">
       <div class="top-inners">
         <div class="info-box">
-          <div class="nick-name-box">
+          <div class="nick-name-box" v-if="cardData.nickName">
             <span :class="'nick-name ' + (cardData.nickName.length > 5 ? `long_${cardData.nickName.length}` : '')">{{ cardData.nickName }}</span>
             <svgIcon :name="sex === 1 ? 'male' : 'female'" :size="cardData.nickName.length > 5 ? '18' : '20'" :color="sex === 1 ? '#488cfc' : '#f94d83'" v-if="typeof cardData.sex === ('number' || 'string')" />
           </div>

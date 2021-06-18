@@ -15,6 +15,8 @@ export default createStore({
     ossClient: storage.ssGet('ossClient'),
     newFriendNum: storage.lcGet('new_friend_num') || 0,
     newMessageNum: 0,
+    receiveMessagesBy: {}, // 接收消息对象
+    pasteImgObj: {}, // 粘贴草稿的对象列表
   },
   mutations: {
     'setLoginData'(state, info) {
@@ -67,6 +69,12 @@ export default createStore({
     'setNewMessageNum'(state, num) {
       state.newMessageNum = num
     },
+    'getReceiveMessagesBy'(state, obj) {
+      state.receiveMessagesBy = obj
+    },
+    'setPasteImgObj'(state, data) {
+      state.pasteImgObj = data
+    },
   },
   actions: {
     setLoginData({ commit }, info) {
@@ -105,6 +113,12 @@ export default createStore({
     },
     setReadyTextObj({ commit }, obj) {
       commit('setReadyTextObj', obj)
+    },
+    getReceiveMessagesBy({ commit }, obj) {
+      commit('getReceiveMessagesBy', obj)
+    },
+    setPasteImgObj({ commit }, data) {
+      commit('setPasteImgObj', data)
     },
   }
   // modules: {

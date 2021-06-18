@@ -64,20 +64,20 @@ app.on('activate', () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+app.commandLine.appendSwitch('disable-site-isolation-trials')
 app.commandLine.appendSwitch('disable-features', 'OutOfBlinkCors')
 app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    try {
-      protocol.registerFileProtocol('file', (request, callback) => {
-      const pathname = decodeURI(request.url.replace('file:///', ''));
-      // const pathname = decodeURIComponent(request.url.replace('file:///', ''));
-      callback(pathname);
-    })
-      await installExtension(VUEJS_DEVTOOLS)
-    } catch (e) {
-      console.error('Vue Devtools failed to install:', e.toString())
-    }
+  // Install Vue Devtools
+  try {
+    protocol.registerFileProtocol('file', (request, callback) => {
+    // const pathname = decodeURI(request.url.replace('file:///', ''));
+    const pathname = decodeURIComponent(request.url.replace('file:///', ''));
+    console.log(pathname)
+    callback(pathname);
+  })
+    await installExtension(VUEJS_DEVTOOLS)
+  } catch (e) {
+    console.error('Vue Devtools failed to install:', e.toString())
   }
   createWindow()
 })

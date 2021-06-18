@@ -20,6 +20,7 @@ export default {
 	},
 	mounted() {
     ipcRenderer.on('card-data', (event, arg) => {
+      console.log(arg)
       this.cardData = arg
     })
 	},
