@@ -38,7 +38,7 @@ if (window.getSelection) {
         range.collapse(true)
         sel.removeAllRanges()
         sel.addRange(range)
-      }, 100)
+      }, 50)
     }
   }
 } else if (doc.selection && doc.selection.createRange) {

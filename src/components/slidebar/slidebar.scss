@@ -19,7 +19,6 @@
     .avatar-box {
       width: 46px;
       height: 46px;
-      border: 2px solid rgba(237, 64, 20, 0.8);
       background-position: center;
       border-radius: 50%;
       background-repeat: no-repeat;
@@ -28,10 +27,6 @@
 
     &.online {
       border-color: rgba(25, 190, 107, 0.2);
-
-      .avatar-box {
-        border-color: rgba(25, 190, 107, 0.3);
-      }
     }
   }
 
@@ -43,7 +38,7 @@
       text-align: center;
 
       &.active {
-        background-color: #031956;
+        background-color: #305fe4;
 
         a svg {
           fill: #fff;
@@ -57,7 +52,7 @@
         position: relative;
 
         svg {
-          fill: #999;
+          fill: #77b7ff;
           vertical-align: middle;
         }
 

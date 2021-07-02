@@ -63,6 +63,6 @@ const Win = {
       data: Object.assign({}, data)
     }
     windowCreate(param)
-  },
+  }
 }
 export default Win

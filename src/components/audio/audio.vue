@@ -7,7 +7,7 @@
         <icon name="audio-play" width="20" height="20" color="#fff #008dff" class="icon-stop2"></icon>
       </a> -->
       <a @click="pause()" title="Play" :class="[ paused ? 'icon-play3' : 'icon-pause2' ]">
-        <svgIcon :name="paused ? 'play' : 'pause'" size="14" color="#2898FF" />
+        <svgIcon :name="paused ? 'play' : 'pause'" size="14" color="#fff" />
       </a>
       <div v-on:click="setPosition" class="vue-sound__playback-time-wrapper" @mousedown="changeAudioTime">
         <div ref="progressTg" class="vue-sound__playback-time-indicator"></div>

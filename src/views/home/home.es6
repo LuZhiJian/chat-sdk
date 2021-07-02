@@ -450,6 +450,24 @@ export default {
         }
       }
       this.$store.dispatch('setDBMessageData', this.allChatData)
+      let newMsgList = this.$store.state.newMsgList
+      let isNewMsg = newMsgList.findIndex(i => i.uid === chatId)
+      if (isNewMsg != -1) {
+        console.log('????')
+        newMsgList.splice(isNewMsg, 1)
+        this.$store.dispatch('setnewMsgList', newMsgList)
+        if (newMsgList.length == 0) {
+          ipcRenderer.send('msgWindow', {
+            winName: "msgWindow",
+            SH: false
+          });
+        } else {
+          ipcRenderer.send("icon-Twinkle", {
+            winName: "win",
+            newMsgList
+          })
+        }
+      }
     },
     readNewMsgFun() {
       this.newMsgNum = 0

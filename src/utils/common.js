@@ -535,6 +535,22 @@ export const decodeCutImg = (str, cutImgObj) => {
   }
 }
 
+//将base64转换为文件
+export const dataURLtoFile = (dataurl) => {
+  const filename = `img_${md5(new Date().getTime().toString())}.png`
+  let arr = dataurl.split(','),
+    mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]),
+    n = bstr.length,
+    u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, {
+    type: mime
+  });
+}
+
 export const FileAesBuffer = (arraybuf, size, filename) => {
   return new Promise(resolve => {
     let worker = new SWorker()

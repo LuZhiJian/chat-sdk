@@ -149,6 +149,7 @@ export default {
       let newfile = null
       switch (filedata.type) {
         case 2:
+        case 6:
           newfile = new Image
           break;
         case 3:
@@ -219,7 +220,7 @@ export default {
       const thumimgdata = filedata.type === 2 ? await this.makeThumimg(file, filedata) : null
       this.getImgToBase64(filedata, file, async (dataUrl, newFile) => {
         const filePath = await creatfile.imFile(file, this.chatUid)
-        let data = [2, 4, 5].includes(filedata.type) ? {
+        let data = [2, 4, 6].includes(filedata.type) ? {
           key: file.name,
           fileType: filedata.type,
           suffix: filedata.suffix,
@@ -271,7 +272,8 @@ export default {
         gressData.url = oldData.url
         that.$emit('progress', Object.assign(data, gressData))
       }, res => {
-        const sendData = {...res, ...data}
+        const newRes = deepClone(res)
+        const sendData = {...newRes, ...data}
         sendData.content.url = res.url
         sendData.url = oldData.url
         that.$emit('uploaded', sendData)

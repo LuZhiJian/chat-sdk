@@ -64,11 +64,13 @@ const socket = {
 
     // 关闭连接
     socket.websock.onclose = (e) => {
+      const nowTime = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
       console.log('连接已断开')
-      console.log('connection closed (' + e.code + ')')
+      console.log('connection closed (' + e.code + '       ' + nowTime + ')')
       clearInterval(socket.hearbeat_interval)
       clearInterval(socket.hearbeat_timer)
       socket.socket_open = false
+      socket.websock = null
 
       // 需要重新连接
       if (socket.is_reonnect) {
@@ -203,6 +205,8 @@ const socket = {
     }
 
     socket.hearbeat_timer = setInterval(() => {
+      const nowTime = dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+      console.log('发送心跳时间：' + '   ' + nowTime)
       socket.send(1, {})
     }, socket.hearbeat_interval)
   },

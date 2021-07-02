@@ -49,7 +49,7 @@ import packageJson from '../package.json'
 import os from 'os'
 import api from 'utils/api'
 import websocket from 'utils/websocket'
-import { remote } from 'electron'
+import { remote, ipcRenderer } from 'electron'
 import Win from 'utils/winOptions'
 import db from '@/db'
 import { deepClone, intervalTime } from 'utils/common'
@@ -95,6 +95,11 @@ export default {
   methods: {
     logout() {
       websocket.close()
+      this.$store.dispatch('setnewMsgList', [])
+      ipcRenderer.send('msgWindow', {
+        winName: "msgWindow",
+        SH: false
+      })
     },
     clickEvent(e) {
       console.log(e)

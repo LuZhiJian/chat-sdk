@@ -1,5 +1,5 @@
 import OSS from 'ali-oss'
-import { resetTime } from 'utils/common'
+import { deepClone, resetTime } from 'utils/common'
 import api from 'utils/api'
 import store from '../store'
 
@@ -42,14 +42,14 @@ const client = async (type, file, size, progressFun, sucFun, errFun) => {
     bucket: data.ossBucket,
     stsToken: data.securityToken
   })
+  const copyOnlineFile = deepClone(onlineFile)
   const ossName = size > 1024 * 100 ? 'multipartUpload' : 'put'
-  console.log(file)
-  ossClient[ossName](onlineFile.fileId, file, {
+  ossClient[ossName](copyOnlineFile.fileId, file, {
     progress: (percentage, pct) => {
       const percent = (percentage * 100).toFixed(0)
-      console.log(pct)
+      // console.log(pct)
       if (pct) {
-        progressFun(Object.assign(onlineFile, {progress: Number(percent), uploadId: pct.uploadId}))
+        progressFun(Object.assign(copyOnlineFile, {progress: Number(percent), uploadId: pct.uploadId}))
       }
     }
   }).then(res => {

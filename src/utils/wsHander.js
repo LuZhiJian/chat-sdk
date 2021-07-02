@@ -170,24 +170,26 @@ const receiveCase = async (protorlId, res = {}) => {
       // console.log(oneMsg.content)
       switch (oneMsg.msgType) {
         case 2:
-        case 5:
+        case 6:
           const suffix = oneMsg.msgType === 2 ? 'png' : 'gif'
-          const thumInfo = {
-            fileUrl: oneMsg.content.thumbURL,
-            size: 102400,
-            name: `${md5(oneMsg.content.thumbURL)}.${suffix}`,
-            type: 2,
-            chatUid: friendId
+          if (oneMsg.msgType === 2) {
+            const thumInfo = {
+              fileUrl: oneMsg.content.thumbURL,
+              size: 102400,
+              name: `${md5(oneMsg.content.thumbURL)}.${suffix}`,
+              type: 2,
+              chatUid: friendId
+            }
+            const thumdata = await getFileDate(thumInfo)
+            oneMsg.thumbURL = thumdata.locUrl
           }
-          const thumdata = await getFileDate(thumInfo)
-          oneMsg.thumbURL = thumdata.locUrl
           const autoLoad = oneMsg.content.fileSize/1024/1024 <= 2
           if (autoLoad) {
             const imgInfo = {
               fileUrl: oneMsg.content.url,
               size: oneMsg.content.fileSize,
               name: `${md5(oneMsg.content.url)}.${suffix}`,
-              type: 2,
+              type: oneMsg.msgType,
               chatUid: friendId
             }
             const imgdata = await getFileDate(imgInfo)

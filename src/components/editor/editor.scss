@@ -102,10 +102,10 @@
         }
       }
 
-      &:empty:before {
-        color: #969696;
-        content: attr(placeholder);
-      }
+      // &:empty:before {
+      //   color: #969696;
+      //   content: attr(placeholder);
+      // }
       &::-webkit-scrollbar {
         width: 8px;
         height: 1px;

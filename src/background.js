@@ -72,7 +72,6 @@ app.on('ready', async () => {
     protocol.registerFileProtocol('file', (request, callback) => {
     // const pathname = decodeURI(request.url.replace('file:///', ''));
     const pathname = decodeURIComponent(request.url.replace('file:///', ''));
-    console.log(pathname)
     callback(pathname);
   })
     await installExtension(VUEJS_DEVTOOLS)

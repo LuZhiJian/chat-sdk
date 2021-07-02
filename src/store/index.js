@@ -17,6 +17,7 @@ export default createStore({
     newMessageNum: 0,
     receiveMessagesBy: {}, // 接收消息对象
     pasteImgObj: {}, // 粘贴草稿的对象列表
+    newMsgList: [], //新消息队列
   },
   mutations: {
     'setLoginData'(state, info) {
@@ -75,6 +76,9 @@ export default createStore({
     'setPasteImgObj'(state, data) {
       state.pasteImgObj = data
     },
+    'setnewMsgList'(state, list) {
+      state.newMsgList = list
+    },
   },
   actions: {
     setLoginData({ commit }, info) {
@@ -119,6 +123,9 @@ export default createStore({
     },
     setPasteImgObj({ commit }, data) {
       commit('setPasteImgObj', data)
+    },
+    setnewMsgList({ commit }, list) {
+      commit('setnewMsgList', list)
     },
   }
   // modules: {

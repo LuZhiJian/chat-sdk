@@ -1,25 +1,49 @@
-import { ref, computed, watch, reactive, toRefs } from 'vue'
+import {
+  ref,
+  computed,
+  watch,
+  reactive,
+  toRefs
+} from 'vue'
 import EmojiFace from 'components/emojiFace'
 import RangeUtil from 'components/emojiFace/rangeUtil'
 import UploadFile from 'components/common/UploadFile.vue'
-import { deepClone, HTMLEncode, getEmojiImgSrc, parseEmoji, decodeEmoji, keepLastIndex, checkFile, matchType, checkCutImg, imgFileGetImg, decodeCutImg } from 'utils/common'
+import {
+  deepClone,
+  HTMLEncode,
+  getEmojiImgSrc,
+  parseEmoji,
+  decodeEmoji,
+  keepLastIndex,
+  checkFile,
+  matchType,
+  checkCutImg,
+  imgFileGetImg,
+  decodeCutImg,
+  dataURLtoFile
+} from 'utils/common'
+import {
+  ipcRenderer,
+  clipboard,
+  nativeImage
+} from 'electron'
 import fileFix from 'utils/fileSend'
 
 export default {
-	name: 'editor',
-	components: {
+  name: 'editor',
+  components: {
     EmojiFace,
     UploadFile
-	},
-	data () {
-		return {
+  },
+  data() {
+    return {
       curContent: '',
       emoji: false,
       selection: null,
       trueContent: '',
       cutImgObj: {}
-		}
-	},
+    }
+  },
   props: {
     chatuser: Object
   },
@@ -27,7 +51,7 @@ export default {
     let userObj = reactive({
       newUser: {}
     })
-    watch(()=> props.chatuser, (newObj, oldObj)=>{
+    watch(() => props.chatuser, (newObj, oldObj) => {
       userObj.newUser = newObj
       // context.emit('send', {})
     }, {
@@ -58,13 +82,46 @@ export default {
       ...toRefs(userObj)
     }
   },
-	mounted() {
+  mounted() {
     document.body.addEventListener('click', this.hideFaceHandle)
-	},
+    this.initEvents()
+  },
   unmounted() {
     document.body.removeEventListener('click', this.hideFaceHandle)
-	},
-	methods: {
+    this.offEvents()
+  },
+  methods: {
+    undo(e) {
+      this.clearInput()
+      return false
+    },
+    initEvents() {
+      ipcRenderer.on("editor-cut", (event, arg) => {
+        document.execCommand('Cut', 'true', null)
+      })
+      ipcRenderer.on('editor-copy', (event, arg) => {
+        document.execCommand("Copy")
+      })
+      ipcRenderer.on('editor-paste', (event, arg) => {
+        const txt = clipboard.readText()
+        const img = clipboard.readImage()
+        if (img.getSize().width) {
+          const file = dataURLtoFile(img.toDataURL())
+          this.pasteImg(file)
+        } else if (txt) {
+          this.pasteTxt(txt)
+        }
+      })
+      ipcRenderer.on("editor-delete", (event, arg) => {
+        document.execCommand('Delete', 'false', null)
+      })
+    },
+    offEvents() {
+      ipcRenderer.removeAllListeners('editor-copy')
+      ipcRenderer.removeAllListeners('editor-cut')
+      ipcRenderer.removeAllListeners('editor-paste')
+      ipcRenderer.removeAllListeners('editor-delete')
+    },
     selectEmoji(value) {
       this.insertFace(value)
       this.emoji = false
@@ -93,29 +150,59 @@ export default {
         }
       })
     },
+    hasNextSibling(node) {
+      if (node.nextElementSibling) {
+        return true;
+      }
+      while (node.nextSibling) {
+        node = node.nextSibling;
+        if (node.length > 0) {
+          return true;
+        }
+      }
+      return false;
+    },
     // 换行并重新定位光标位置
     textareaRange() {
-      var el = this.$refs.textarea
-      var range = document.createRange()
-      //返回用户当前的选区
-      var sel =  document.getSelection()
-      //获取当前光标位置
-      var offset = sel.focusOffset
-      //div当前内容
-      var content = el.innerHTML
-      //添加换行符\n
-      // console.log(content)
-      // console.log(content.indexOf('\n'))
-      el.innerHTML = content.slice(0, offset)+'\n'+content.slice(offset)
-      // console.log(el.innerHTML.indexOf('\n'))
-      //设置光标为当前位置
-      range.setStart(el.childNodes[0], offset+1)
-      //使得选区(光标)开始与结束位置重叠
-      range.collapse(true)
-      //移除现有其他的选区
-      sel.removeAllRanges()
-      //加入光标的选区
-      sel.addRange(range)
+      // var selection = window.getSelection()
+      // const range = selection.getRangeAt(0)
+      // const br = document.createTextNode('\n')
+      // console.log(range)
+      // range.deleteContents()
+      // range.insertNode(br)
+      // range.setStartAfter(br)
+      // range.setEndAfter(br)
+      // range.collapse(false)
+      // selection.removeAllRanges()
+      // selection.addRange(range)
+
+      let doc_fragment = document.createDocumentFragment();
+
+      // Create a new break element
+      // let new_ele = document.createElement('br');
+      let new_ele = document.createTextNode('\n')
+      doc_fragment.appendChild(new_ele);
+
+      // Get the current selection, and make sure the content is removed (if any)
+      let range = window.getSelection().getRangeAt(0);
+      range.deleteContents();
+
+      // See if the selection container has any next siblings
+      // If not: add another break, otherwise the cursor won't move
+      if (!this.hasNextSibling(range.endContainer)) {
+        let extra_break = document.createTextNode('\n')
+        doc_fragment.appendChild(extra_break);
+      }
+      range.insertNode(doc_fragment);
+      //create a new range
+      range = document.createRange();
+      range.setStartAfter(new_ele);
+      range.collapse(true);
+      //make the cursor there
+      let sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      return false;
     },
     getFocus() {
       this.$nextTick(() => {
@@ -161,13 +248,51 @@ export default {
       const isFile = await checkFile(file)
       if (file && isFile) {
         const fileType = matchType(file.name).type
-        if ([2,3,4].includes(fileType)) {
+        if ([2, 3, 4].includes(fileType)) {
           this.$refs.uploaders.uploadingFun(file)
         } else {
           this.$notify.open("warning", 'Sorry~暂未开通发送文件功能噢')
         }
       }
       return false
+    },
+    pasteTxt(str) {
+      const $input = this.$refs.textarea
+      const en_str = HTMLEncode(str)
+      this.pasteHtmlAtCaret(en_str)
+      const value = decodeEmoji($input.innerHTML)
+      this.setInputReadyTxt(value)
+      this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+    },
+    async pasteImg(file) {
+      const {
+        img,
+        id
+      } = await imgFileGetImg(file)
+      const $input = this.$refs.textarea
+      if ($input) {
+        $input.focus()
+      }
+      if (this.selection) {
+        RangeUtil.restoreSelection(this.selection)
+      }
+      this.$nextTick(() => {
+        try {
+          this.cutImgObj[this.chatUser.uid] = {
+            file: file,
+            id: id
+          }
+          this.$store.dispatch('setPasteImgObj', this.cutImgObj)
+          RangeUtil.replaceSelection(img)
+          $input.focus()
+          const value = decodeEmoji(HTMLEncode($input.innerHTML))
+          this.setInputReadyTxt(value)
+          this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+        } catch (e) {
+          /* eslint-disable no-console */
+          console.error(e)
+        }
+      })
     },
     async pasteHandle(e) {
       let data = (e.clipboardData || window.clipboardData)
@@ -182,69 +307,20 @@ export default {
           return false
         }
         const file = fileItem
-        const {img, id} = await imgFileGetImg(file)
-        const $input = this.$refs.textarea
-        $input.focus()
-        if (this.selection) {
-          RangeUtil.restoreSelection(this.selection)
-        }
-        this.$nextTick(() => {
-          try {
-            this.cutImgObj[this.chatUser.uid] = {
-              file: file,
-              id: id
-            }
-            this.$store.dispatch('setPasteImgObj', this.cutImgObj)
-            RangeUtil.replaceSelection(img)
-            const value = decodeEmoji(HTMLEncode($input.innerHTML))
-            this.setInputReadyTxt(value)
-            this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
-            $input.focus()
-          } catch (e) {
-            /* eslint-disable no-console */
-            console.error(e)
-          }
-        })
+        this.pasteImg(file)
         return false
       } else if (item && item.kind === 'string') {
         item.getAsString(str => {
           // str 是获取到的字符串
-          const $input = this.$refs.textarea
-          const en_str = HTMLEncode(str)
-          this.pasteHtmlAtCaret(en_str)
-          const value = decodeEmoji($input.innerHTML)
-          this.setInputReadyTxt(value)
-          this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
+          this.pasteTxt(str)
         })
-      }else if (fileItem || (item.kind === 'file' && item.type.indexOf('image/') !== -1)) {
+      } else if (fileItem || (item.kind === 'file' && item.type.indexOf('image/') !== -1)) {
         if (checkCutImg(this.$refs.textarea.innerHTML)) {
           this.$notify.open('warning', '暂时不支持粘贴多张图片哦')
           return false
         }
         const file = item.getAsFile()
-        const {img, id} = await imgFileGetImg(file)
-        const $input = this.$refs.textarea
-        $input.focus()
-        if (this.selection) {
-          RangeUtil.restoreSelection(this.selection)
-        }
-        this.$nextTick(() => {
-          try {
-            this.cutImgObj[this.chatUser.uid] = {
-              file: file,
-              id: id
-            }
-            this.$store.dispatch('setPasteImgObj', this.cutImgObj)
-            RangeUtil.replaceSelection(img)
-            const value = decodeEmoji(HTMLEncode($input.innerHTML))
-            this.setInputReadyTxt(value)
-            this.trueContent = value.replace(/(^\s*)|(\s*$)/g, "")
-            $input.focus()
-          } catch (e) {
-            /* eslint-disable no-console */
-            console.error(e)
-          }
-        })
+        this.pasteImg(file)
       } else {
         return false
       }
@@ -288,8 +364,9 @@ export default {
       this.$store.dispatch('setReadyTextObj', txtObj)
     },
     //监听按键操作
-    enterFun (event) {
+    enterFun(event) {
       event.preventDefault() // 阻止浏览器默认换行操作
+      if (!this.trueContent) return false
       const el = this.$refs.textarea
       const value = decodeEmoji(el.innerHTML)
       const cutImgObj = this.$store.state.pasteImgObj[this.newUser.uid]
@@ -318,21 +395,23 @@ export default {
     },
 
     //图片文本消息同步递归处理
-    async next(i, list, callback){
-      if(i < list.length){
+    async next(i, list, callback) {
+      if (i < list.length) {
         if (list[i].type === 'file') {
-          if (!list[i].value){
+          if (!list[i].value) {
             this.next(++i, list, callback)
-          }else{
+          } else {
             await this.$refs.uploaders.uploadingFun(list[i].value)
           }
         } else {
-          if(list[i].value) {
+          if (list[i].value) {
             const msgData = {
               type: 1,
               toUid: this.newUser.uid,
               content: {
-                content: list[i].value.replace(/\@[^\s]+\s/ig, function(v) {return v.replace(/\s/ig, String.fromCharCode(8197))})
+                content: list[i].value.replace(/\@[^\s]+\s/ig, function (v) {
+                  return v.replace(/\s/ig, String.fromCharCode(8197))
+                })
               }
             }
             this.$emit('homesend', msgData)
@@ -355,13 +434,55 @@ export default {
       this.$refs.uploaders.cancelUp(msg.fileId, msg.uploadId)
       this.uploadCancel(msg)
     },
+    getSelectText() {
+      let selectedHtml = "";
+      let documentFragment = null;
+      try {
+        if (window.getSelection) {
+          documentFragment = window.getSelection().getRangeAt(0).cloneContents();
+        } else if (document.selection) {
+          documentFragment = document.selection.createRange().HtmlText;
+        }
+
+        for (let i = 0; i < documentFragment.childNodes.length; i++) {
+          let childNode = documentFragment.childNodes[i];
+          if (childNode.nodeType == 3) { // Text 节点
+            selectedHtml += childNode.nodeValue;
+          } else {
+            let nodeHtml = childNode.outerHTML;
+            selectedHtml += nodeHtml;
+          }
+        }
+      } catch (err) {}
+      return selectedHtml
+    },
+    showEditRtKey(event, e) {
+      const txt = clipboard.readText()
+      const img = clipboard.readImage().getSize().width
+      const haveContent = txt || img
+      const myTxt = this.getSelectText()
+      const data = deepClone({
+        type: 'editor',
+        item: {
+          clipboardContent: haveContent,
+          myTxt: myTxt
+        }
+      })
+      ipcRenderer.send(e, data)
+    },
     onChatUserChange(user) {
       if (!user) return false
       const txtObj = deepClone(this.$store.state.readyText)
       const text = txtObj[user.uid]
-      this.setReadyTextToInput(text)
+      this.$nextTick(() => {
+        const $input = this.$refs.textarea
+        if ($input) {
+          $input.focus()
+          this.setReadyTextToInput(text)
+        }
+      })
     }
-	},
+  },
   watch: {
     chatUser: {
       handler: 'onChatUserChange',

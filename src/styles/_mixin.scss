@@ -154,7 +154,7 @@
 @mixin av-style($size, $url) {
   width: $size;
   height: $size;
-  border-radius: 10px;
+  border-radius: 4px;
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;

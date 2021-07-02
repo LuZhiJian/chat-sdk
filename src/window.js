@@ -6,6 +6,8 @@ import Badge from 'electron-windows-badge'
 const isWindows = process.platform === 'win32' ? true : false; //系统判断
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const appName = isDevelopment ? 'peanutTest' : 'peanut'
+const logoPath = path.join(__dirname, '../static/logo.png')
+const emptyPath = path.join(__dirname, '../static/empty.ico')
 
 export const windowsCfg = {
   id: '', //唯一id
@@ -259,6 +261,112 @@ export class Window {
     } else {
       const trayIcon = path.join(__dirname, '../static/logo.ico')
       this.tray = new Tray(trayIcon)
+      const MsgWH = {
+        width: 222,
+        height: 115
+      } //新消息窗口尺寸 belong to windows
+      //应用任务栏图标闪烁
+      let count = 0,
+          timer = null,
+          winBounds;
+      winBounds = this.tray.getBounds()
+
+      let param = { // belong to windows
+        winInfo: {
+          //右下角信息提示
+          title: '',
+          route: '#/window/msg',
+          width: 240,
+          height: 110,
+          x: winBounds.x + winBounds.width / 2 - MsgWH.width / 2,
+          y: winBounds.y - MsgWH.height,
+          show: false,
+          frame: false, //无边框窗口
+          skipTaskbar: true,
+          resizable: false,
+          movable: false,
+          parent: this.homeWin,
+          devTools: false
+        },
+        win: 'msg-data',
+        data: Object.assign({}, data)
+      }
+      this.createWindows(param)
+
+      ipcMain.on("icon-Twinkle", (event, arg) => {
+        count = 0;
+        clearInterval(timer);
+        this.tray.setImage(logoPath);
+        newWindow.msgWindow.webContents.closeDevTools()
+        newWindow.msgWindow.webContents ? newWindow.msgWindow.webContents.send("set-data", arg) :''
+        //调整显示高度
+        let msgHeight = 70 + 45 * arg.newMsgList.length
+        newWindow.msgWindow.setBounds({
+          height: msgHeight,
+          y: winBounds.y - msgHeight
+        })
+
+        timer = setInterval(function () {
+          count++;
+          const icoPath = count % 2 === 0 ? emptyPath : logoPath
+          this.tray.setImage(icoPath);
+          let mouse = screen.getCursorScreenPoint(), //鼠标位置
+            WinBounds = this.tray.getBounds(), //托盘图标位置
+            MsgBounds = newWindow.msgWindow.getBounds();
+          if (
+            mouse.x >= WinBounds.x &&
+            mouse.x <= WinBounds.x + WinBounds.width &&
+            mouse.y >= WinBounds.y &&
+            mouse.y <= WinBounds.y + WinBounds.height
+          ) {
+            newWindow.msgWindow.show();
+          } else {
+            if (
+              newWindow.msgWindow.isVisible() &&
+              mouse.x >= MsgBounds.x &&
+              mouse.x <= MsgBounds.x + MsgBounds.width &&
+              mouse.y >= MsgBounds.y &&
+              mouse.y <= MsgBounds.y + MsgBounds.height
+            ) {
+              newWindow.msgWindow.show()
+            } else {
+              newWindow.msgWindow.hide()
+            }
+          }
+        }, 500)
+        newWindow[arg.winName].flashFrame(true); //任务栏提示
+        newWindow.win.webContents ? newWindow.win.webContents.send('audio-play'):'' //提示音
+      });
+
+      // 取消闪烁
+      ipcMain.on("icon-Twinkle-cancle", (event, arg) => {
+        count = 0;
+        this.main.flashFrame(false);
+        clearInterval(timer);
+        this.tray.setImage(logoPath);
+      });
+
+      // 显示消息
+      ipcMain.on("msgWindow", (event, arg) => {
+        if (arg.SH) {
+          this.main.show()
+          this.main.webContents ? this.main.webContents.send("newMsgList-dataChange", {
+            listNum: arg.listNum,
+            uId: arg.uId
+          }) : ''
+          if (arg.listNum === 0) {
+            count = 0;
+            clearInterval(timer)
+            this.tray.setImage(logoPath)
+          }
+        } else {
+          count = 0
+          clearInterval(timer)
+          this.tray.setImage(logoPath)
+        }
+        newWindow.msgWindow.hide()
+        this.main.flashFrame(false)
+      });
     }
     this.tray.setContextMenu(contextMenu)
     this.tray.setToolTip('花生聊天')
@@ -382,7 +490,7 @@ export class Window {
     //右键列表
     ipcMain.on("right-click-menu", (event, arg) => {
       let menu = new Menu()
-      console.log(arg)
+      // console.log(arg)
       if (arg.type === 'msg') {
         if ([1].includes(arg.item.msgType)) {
           menu.append(new MenuItem({
@@ -426,6 +534,35 @@ export class Window {
           label: '删除',
           click: () => {
             this.main.webContents.send('new-user-del', arg)
+          }
+        }))
+      } else if (arg.type === 'editor') {
+        menu.append(new MenuItem({
+          label: '剪切',
+          enabled: arg.item.myTxt ? true : false,
+          click: () => {
+            this.main.webContents.send('editor-cut', arg.item)
+          }
+        }))
+        menu.append(new MenuItem({
+          label: '复制',
+          enabled: arg.item.myTxt ? true : false,
+          click: () => {
+            this.main.webContents.send('editor-copy', arg.item)
+          }
+        }))
+        menu.append(new MenuItem({
+          label: '粘贴',
+          enabled: arg.item.clipboardContent ? true : false,
+          click: () => {
+            this.main.webContents.send('editor-paste', arg)
+          }
+        }))
+         menu.append(new MenuItem({
+          label: '删除',
+          enabled: arg.item.myTxt ? true : false,
+          click: () => {
+            this.main.webContents.send('editor-delete', arg)
           }
         }))
       }
